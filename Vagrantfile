@@ -26,7 +26,7 @@ elsif ENV['QA_VAGRANT_LIBVIRT_VERSION'] == "master"
   QA_VAGRANT_LIBVIRT_VERSION = "master"
 else
   QA_VAGRANT_LIBVIRT_VERSION = ENV['QA_VAGRANT_LIBVIRT_VERSION']
-  QA_VAGRANT_LIBVIRT_INSTALL_OPTS = "vagrant-libvirt --plugin-version ${#QA_VAGRANT_LIBVIRT_VERSION}"
+  QA_VAGRANT_LIBVIRT_INSTALL_OPTS = "vagrant-libvirt --plugin-version #{QA_VAGRANT_LIBVIRT_VERSION}"
 end
 
 # Some boilerplate to allow local shell commands on host
