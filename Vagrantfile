@@ -628,7 +628,7 @@ EOC
 #    v.vm.provision "wait-upgrade", type: "local_shell", command: "sleep 4m"
     v.vm.provision :shell, :inline => 'pacman -Suyu --noconfirm --noprogressbar'
     v.vm.provision :reload
-    v.vm.provision :shell, :inline => 'pacman -S --noconfirm --noprogressbar vagrant git'
+    v.vm.provision :shell, :inline => 'pacman -S --noconfirm --noprogressbar vagrant git ruby'
     if QA_VAGRANT_LIBVIRT_VERSION == "master"
       v.vm.provision :shell, :inline => "git clone https://github.com/vagrant-libvirt/vagrant-libvirt.git"
       v.vm.provision :shell, :inline => "cd vagrant-libvirt && gem build vagrant-libvirt.gemspec"
