@@ -3,6 +3,32 @@
 
 ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
 
+# Allow for passing test versions with env vars
+if ENV['QA_VAGRANT_VERSION'].nil? || ENV['QA_VAGRANT_VERSION'] == "latest"
+  # If not specified, fetch the latest version using built-in 'version' plugin
+  #
+  # NOTE: we 'cd /tmp' to avoid invoking Vagrant against this very Vagrantfile but 
+  # that may not always work. There is probably a better way by leveraging 
+  # VagrantPlugins::CommandVersion::Command and using 'version-latest'
+  #
+  latest = `cd /tmp; vagrant version | grep Latest | awk '{ print $3 }'`
+  QA_VAGRANT_VERSION = latest.strip
+else
+  QA_VAGRANT_VERSION = ENV['QA_VAGRANT_VERSION']
+end
+
+if ENV['QA_VAGRANT_LIBVIRT_VERSION'].nil?
+  # If not specified, we just install latest published version
+  QA_VAGRANT_LIBVIRT_INSTALL_OPTS = "vagrant-libvirt"
+  QA_VAGRANT_LIBVIRT_VERSION = "latest"
+elsif ENV['QA_VAGRANT_LIBVIRT_VERSION'] == "master"
+  QA_VAGRANT_LIBVIRT_INSTALL_OPTS = "./vagrant-libvirt/vagrant-libvirt-*.gem"
+  QA_VAGRANT_LIBVIRT_VERSION = "master"
+else
+  QA_VAGRANT_LIBVIRT_VERSION = ENV['QA_VAGRANT_LIBVIRT_VERSION']
+  QA_VAGRANT_LIBVIRT_INSTALL_OPTS = "vagrant-libvirt --plugin-version ${#QA_VAGRANT_LIBVIRT_VERSION}"
+end
+
 # Some boilerplate to allow local shell commands on host
 module LocalCommand
     class Config < Vagrant.plugin("2", :config)
@@ -42,14 +68,22 @@ Vagrant.configure(2) do |config|
       domain.cpu_mode = 'host-passthrough'
     end
     v.vm.provision :shell, :inline => 'sed -i "s/# deb-src/deb-src/" /etc/apt/sources.list'
-    v.vm.provision :shell, :inline => 'apt-get update'
-    v.vm.provision :shell, :inline => 'apt-get -y dist-upgrade'
-    v.vm.provision :shell, :inline => 'apt-get -y build-dep vagrant ruby-libvirt'
-    v.vm.provision :shell, :inline => 'apt-get -y install qemu libvirt-bin wget'
+    v.vm.provision :shell, :inline => 'DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get update'
+    v.vm.provision :shell, :inline => 'DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get -y -o Dpkg::Options::="--force-confold" dist-upgrade'
+    v.vm.provision :shell, :inline => 'DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get -y build-dep vagrant ruby-libvirt'
+    v.vm.provision :shell, :inline => 'DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get -y -o Dpkg::Options::="--force-confold" install qemu libvirt-bin wget git'
     v.vm.provision :reload
-    v.vm.provision :shell, :inline => 'wget -q https://releases.hashicorp.com/vagrant/1.8.6/vagrant_1.8.6_x86_64.deb'
-    v.vm.provision :shell, :inline => 'dpkg -i vagrant_1.8.6_x86_64.deb'
-    v.vm.provision :shell, :inline => 'vagrant plugin install vagrant-libvirt'
+    v.vm.provision :shell, :inline => "wget --no-check-certificate --no-verbose https://releases.hashicorp.com/vagrant/#{QA_VAGRANT_VERSION}/vagrant_#{QA_VAGRANT_VERSION}_x86_64.deb"
+    v.vm.provision :shell, :inline => "DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true dpkg -i vagrant_#{QA_VAGRANT_VERSION}_x86_64.deb"
+    if QA_VAGRANT_LIBVIRT_VERSION == "master"
+      v.vm.provision :shell, :inline => "git clone https://github.com/vagrant-libvirt/vagrant-libvirt.git"
+      v.vm.provision :shell, :inline => "cd vagrant-libvirt && gem build vagrant-libvirt.gemspec"
+    end  
+    v.vm.provision :shell, :inline => "vagrant plugin install #{QA_VAGRANT_LIBVIRT_INSTALL_OPTS}"
+    # Workarond for Vagrant bug
+    if QA_VAGRANT_VERSION == "1.8.7" || QA_VAGRANT_VERSION == "1.9.0" || QA_VAGRANT_VERSION == "1.9.1"
+      v.vm.provision :shell, :inline => 'for i in /opt/vagrant/embedded/gems/gems/vagrant-*/plugins/guests/tinycore/guest.rb; do sed -i "s/Core Linux/Core.*Linux/" $i; done'
+    end
     # Testing nested VM provisioning via nested kvm 
     v.vm.provision "shell", inline: <<-EOC
 cat <<-'EOF' > Vagrantfile
@@ -85,14 +119,26 @@ EOC
       domain.cpu_mode = 'host-passthrough'
     end
     v.vm.provision :shell, :inline => 'sed -i "s/# deb-src/deb-src/" /etc/apt/sources.list'
-    v.vm.provision :shell, :inline => 'apt-get update'
-    v.vm.provision :shell, :inline => 'apt-get -y dist-upgrade'
-    v.vm.provision :shell, :inline => 'apt-get -y build-dep vagrant ruby-libvirt'
-    v.vm.provision :shell, :inline => 'apt-get -y install qemu libvirt-bin wget'
+    v.vm.provision :shell, :inline => 'DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get update'
+    v.vm.provision :shell, :inline => 'DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get -y -o Dpkg::Options::="--force-confold" dist-upgrade'
+    v.vm.provision :shell, :inline => 'DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get -y build-dep vagrant ruby-libvirt'
+    v.vm.provision :shell, :inline => 'DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get -y -o Dpkg::Options::="--force-confold" install qemu libvirt-bin wget git'
     v.vm.provision :reload
-    v.vm.provision :shell, :inline => 'wget -q https://releases.hashicorp.com/vagrant/1.8.6/vagrant_1.8.6_x86_64.deb'
-    v.vm.provision :shell, :inline => 'dpkg -i vagrant_1.8.6_x86_64.deb'
-    v.vm.provision :shell, :inline => 'vagrant plugin install vagrant-libvirt'
+    v.vm.provision :shell, :inline => "wget --no-check-certificate --no-verbose https://releases.hashicorp.com/vagrant/#{QA_VAGRANT_VERSION}/vagrant_#{QA_VAGRANT_VERSION}_x86_64.deb"
+    v.vm.provision :shell, :inline => "DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true dpkg -i vagrant_#{QA_VAGRANT_VERSION}_x86_64.deb"
+    if QA_VAGRANT_LIBVIRT_VERSION == "master"
+      v.vm.provision :shell, :inline => "git clone https://github.com/vagrant-libvirt/vagrant-libvirt.git"
+      v.vm.provision :shell, :inline => "cd vagrant-libvirt && gem build vagrant-libvirt.gemspec"
+    end  
+    v.vm.provision :shell, :inline => "vagrant plugin install #{QA_VAGRANT_LIBVIRT_INSTALL_OPTS}"
+    # Workarond for Vagrant bug
+    if QA_VAGRANT_VERSION == "1.8.7" || QA_VAGRANT_VERSION == "1.9.0" || QA_VAGRANT_VERSION == "1.9.1"
+      v.vm.provision :shell, :inline => 'for i in /opt/vagrant/embedded/gems/gems/vagrant-*/plugins/guests/tinycore/guest.rb; do sed -i "s/Core Linux/Core.*Linux/" $i; done'
+    end
+    # Workarond for Vagrant bug
+    if QA_VAGRANT_VERSION == "1.8.7" || QA_VAGRANT_VERSION == "1.9.0" || QA_VAGRANT_VERSION == "1.9.1"
+      v.vm.provision :shell, :inline => 'for i in /opt/vagrant/embedded/gems/gems/vagrant-*/plugins/guests/tinycore/guest.rb; do sed -i "s/Core Linux/Core.*Linux/" $i; done'
+    end
     # Testing nested VM provisioning via nested kvm 
     v.vm.provision "shell", inline: <<-EOC
 cat <<-'EOF' > Vagrantfile
@@ -127,14 +173,22 @@ EOC
       domain.cpu_mode = 'host-passthrough'
     end
     v.vm.provision :shell, :inline => 'sed -i "s/# deb-src/deb-src/" /etc/apt/sources.list'
-    v.vm.provision :shell, :inline => 'apt-get update'
-    v.vm.provision :shell, :inline => 'apt-get -y dist-upgrade'
-    v.vm.provision :shell, :inline => 'apt-get -y build-dep vagrant ruby-libvirt'
-    v.vm.provision :shell, :inline => 'apt-get -y install qemu libvirt-bin wget'
+    v.vm.provision :shell, :inline => 'DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get update'
+    v.vm.provision :shell, :inline => 'DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get -y -o Dpkg::Options::="--force-confold" dist-upgrade'
+    v.vm.provision :shell, :inline => 'DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get -y build-dep vagrant ruby-libvirt'
+    v.vm.provision :shell, :inline => 'DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get -y -o Dpkg::Options::="--force-confold" install qemu libvirt-bin wget git'
     v.vm.provision :reload
-    v.vm.provision :shell, :inline => 'wget -q https://releases.hashicorp.com/vagrant/1.8.6/vagrant_1.8.6_x86_64.deb'
-    v.vm.provision :shell, :inline => 'dpkg -i vagrant_1.8.6_x86_64.deb'
-    v.vm.provision :shell, :inline => 'vagrant plugin install vagrant-libvirt'
+    v.vm.provision :shell, :inline => "wget --no-check-certificate --no-verbose https://releases.hashicorp.com/vagrant/#{QA_VAGRANT_VERSION}/vagrant_#{QA_VAGRANT_VERSION}_x86_64.deb"
+    v.vm.provision :shell, :inline => "DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true dpkg -i vagrant_#{QA_VAGRANT_VERSION}_x86_64.deb"
+    if QA_VAGRANT_LIBVIRT_VERSION == "master"
+      v.vm.provision :shell, :inline => "git clone https://github.com/vagrant-libvirt/vagrant-libvirt.git"
+      v.vm.provision :shell, :inline => "cd vagrant-libvirt && gem build vagrant-libvirt.gemspec"
+    end  
+    v.vm.provision :shell, :inline => "vagrant plugin install #{QA_VAGRANT_LIBVIRT_INSTALL_OPTS}"
+    # Workarond for Vagrant bug
+    if QA_VAGRANT_VERSION == "1.8.7" || QA_VAGRANT_VERSION == "1.9.0" || QA_VAGRANT_VERSION == "1.9.1"
+      v.vm.provision :shell, :inline => 'for i in /opt/vagrant/embedded/gems/gems/vagrant-*/plugins/guests/tinycore/guest.rb; do sed -i "s/Core Linux/Core.*Linux/" $i; done'
+    end
     # Testing nested VM provisioning via nested kvm 
     v.vm.provision "shell", inline: <<-EOC
 cat <<-'EOF' > Vagrantfile
@@ -178,14 +232,22 @@ cat <<-'EOF' >/etc/apt/sources.list
  deb-src http://httpredir.debian.org/debian jessie-updates main contrib non-free
 EOF
 EOC
-    v.vm.provision :shell, :inline => 'apt-get update'
-    v.vm.provision :shell, :inline => 'apt-get -y dist-upgrade'
-    v.vm.provision :shell, :inline => 'apt-get -y build-dep vagrant ruby-libvirt'
-    v.vm.provision :shell, :inline => 'apt-get -y install qemu libvirt-bin wget ebtables dnsmasq'
+    v.vm.provision :shell, :inline => "wget --no-check-certificate --no-verbose https://releases.hashicorp.com/vagrant/#{QA_VAGRANT_VERSION}/vagrant_#{QA_VAGRANT_VERSION}_x86_64.deb"
+    v.vm.provision :shell, :inline => 'DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get update'
+    v.vm.provision :shell, :inline => 'DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get -y -o Dpkg::Options::="--force-confold" dist-upgrade'
+    v.vm.provision :shell, :inline => 'DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get -y build-dep vagrant ruby-libvirt'
+    v.vm.provision :shell, :inline => 'DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get -y -o Dpkg::Options::="--force-confold" install qemu libvirt-bin wget ebtables dnsmasq git'
     v.vm.provision :reload
-    v.vm.provision :shell, :inline => 'wget -q https://releases.hashicorp.com/vagrant/1.8.6/vagrant_1.8.6_x86_64.deb'
-    v.vm.provision :shell, :inline => 'dpkg -i vagrant_1.8.6_x86_64.deb'
-    v.vm.provision :shell, :inline => 'vagrant plugin install vagrant-libvirt'
+    v.vm.provision :shell, :inline => "DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true dpkg -i vagrant_#{QA_VAGRANT_VERSION}_x86_64.deb"
+    if QA_VAGRANT_LIBVIRT_VERSION == "master"
+      v.vm.provision :shell, :inline => "git clone https://github.com/vagrant-libvirt/vagrant-libvirt.git"
+      v.vm.provision :shell, :inline => "cd vagrant-libvirt && gem build vagrant-libvirt.gemspec"
+    end  
+    v.vm.provision :shell, :inline => "vagrant plugin install #{QA_VAGRANT_LIBVIRT_INSTALL_OPTS}"
+    # Workarond for Vagrant bug
+    if QA_VAGRANT_VERSION == "1.8.7" || QA_VAGRANT_VERSION == "1.9.0" || QA_VAGRANT_VERSION == "1.9.1"
+      v.vm.provision :shell, :inline => 'for i in /opt/vagrant/embedded/gems/gems/vagrant-*/plugins/guests/tinycore/guest.rb; do sed -i "s/Core Linux/Core.*Linux/" $i; done'
+    end
     # Testing nested VM provisioning via nested kvm 
     v.vm.provision "shell", inline: <<-EOC
 cat <<-'EOF' > Vagrantfile
@@ -220,12 +282,20 @@ EOC
       domain.cpu_mode = 'host-passthrough'
     end
     v.vm.provision :shell, :inline => 'yum -y update'
-    v.vm.provision :shell, :inline => 'yum -y install qemu libvirt libvirt-devel ruby-devel wget gcc acpid qemu-kvm'
+    v.vm.provision :shell, :inline => 'yum -y install qemu libvirt libvirt-devel ruby-devel wget gcc acpid qemu-kvm git'
     v.vm.provision :shell, :inline => 'chkconfig --enable acpid; service acpid restart'
     v.vm.provision :reload
-    v.vm.provision :shell, :inline => 'wget -q https://releases.hashicorp.com/vagrant/1.8.6/vagrant_1.8.6_x86_64.rpm'
-    v.vm.provision :shell, :inline => 'rpm -Uvh --force vagrant_1.8.6_x86_64.rpm | sed "s/#//g"'
-    v.vm.provision :shell, :inline => 'vagrant plugin install vagrant-libvirt'
+    v.vm.provision :shell, :inline => "wget --no-check-certificate --no-verbose https://releases.hashicorp.com/vagrant/#{QA_VAGRANT_VERSION}/vagrant_#{QA_VAGRANT_VERSION}_x86_64.rpm"
+    v.vm.provision :shell, :inline => "rpm -Uvh --force vagrant_#{QA_VAGRANT_VERSION}_x86_64.rpm | sed 's/#//g'"
+    if QA_VAGRANT_LIBVIRT_VERSION == "master"
+      v.vm.provision :shell, :inline => "git clone https://github.com/vagrant-libvirt/vagrant-libvirt.git"
+      v.vm.provision :shell, :inline => "cd vagrant-libvirt && gem build vagrant-libvirt.gemspec"
+    end  
+    v.vm.provision :shell, :inline => "vagrant plugin install #{QA_VAGRANT_LIBVIRT_INSTALL_OPTS}"
+    # Workarond for Vagrant bug
+    if QA_VAGRANT_VERSION == "1.8.7" || QA_VAGRANT_VERSION == "1.9.0" || QA_VAGRANT_VERSION == "1.9.1"
+      v.vm.provision :shell, :inline => 'for i in /opt/vagrant/embedded/gems/gems/vagrant-*/plugins/guests/tinycore/guest.rb; do sed -i "s/Core Linux/Core.*Linux/" $i; done'
+    end
     # Testing nested VM provisioning via nested kvm 
     v.vm.provision "shell", inline: <<-EOC
 cat <<-'EOF' > Vagrantfile
@@ -261,11 +331,19 @@ EOC
       domain.cpu_mode = 'host-passthrough'
     end
     v.vm.provision :shell, :inline => 'yum -y update'
-    v.vm.provision :shell, :inline => 'yum -y install qemu libvirt libvirt-devel ruby-devel wget gcc qemu-kvm'
+    v.vm.provision :shell, :inline => 'yum -y install qemu libvirt libvirt-devel ruby-devel wget gcc qemu-kvm git'
     v.vm.provision :reload
-    v.vm.provision :shell, :inline => 'wget -q https://releases.hashicorp.com/vagrant/1.8.6/vagrant_1.8.6_x86_64.rpm'
-    v.vm.provision :shell, :inline => 'rpm -Uvh --force vagrant_1.8.6_x86_64.rpm | sed "s/#//g"'
-    v.vm.provision :shell, :inline => 'vagrant plugin install vagrant-libvirt'
+    v.vm.provision :shell, :inline => "wget --no-check-certificate --no-verbose https://releases.hashicorp.com/vagrant/#{QA_VAGRANT_VERSION}/vagrant_#{QA_VAGRANT_VERSION}_x86_64.rpm"
+    v.vm.provision :shell, :inline => "rpm -Uvh --force vagrant_#{QA_VAGRANT_VERSION}_x86_64.rpm | sed 's/#//g'"
+    if QA_VAGRANT_LIBVIRT_VERSION == "master"
+      v.vm.provision :shell, :inline => "git clone https://github.com/vagrant-libvirt/vagrant-libvirt.git"
+      v.vm.provision :shell, :inline => "cd vagrant-libvirt && gem build vagrant-libvirt.gemspec"
+    end  
+    v.vm.provision :shell, :inline => "vagrant plugin install #{QA_VAGRANT_LIBVIRT_INSTALL_OPTS}"
+    # Workarond for Vagrant bug
+    if QA_VAGRANT_VERSION == "1.8.7" || QA_VAGRANT_VERSION == "1.9.0" || QA_VAGRANT_VERSION == "1.9.1"
+      v.vm.provision :shell, :inline => 'for i in /opt/vagrant/embedded/gems/gems/vagrant-*/plugins/guests/tinycore/guest.rb; do sed -i "s/Core Linux/Core.*Linux/" $i; done'
+    end
     # Testing nested VM provisioning via nested kvm 
     v.vm.provision "shell", inline: <<-EOC
 cat <<-'EOF' > Vagrantfile
@@ -301,11 +379,19 @@ EOC
       domain.cpu_mode = 'host-passthrough'
     end
     v.vm.provision :shell, :inline => 'yum -y update'
-    v.vm.provision :shell, :inline => 'yum -y install qemu libvirt libvirt-devel ruby-devel wget gcc'
+    v.vm.provision :shell, :inline => 'yum -y install qemu libvirt libvirt-devel ruby-devel wget gcc git'
     v.vm.provision :reload
-    v.vm.provision :shell, :inline => 'wget -q https://releases.hashicorp.com/vagrant/1.8.6/vagrant_1.8.6_x86_64.rpm'
-    v.vm.provision :shell, :inline => 'rpm -Uvh --force vagrant_1.8.6_x86_64.rpm | sed "s/#//g"'
-    v.vm.provision :shell, :inline => 'vagrant plugin install vagrant-libvirt'
+    v.vm.provision :shell, :inline => "wget --no-check-certificate --no-verbose https://releases.hashicorp.com/vagrant/#{QA_VAGRANT_VERSION}/vagrant_#{QA_VAGRANT_VERSION}_x86_64.rpm"
+    v.vm.provision :shell, :inline => "rpm -Uvh --force vagrant_#{QA_VAGRANT_VERSION}_x86_64.rpm | sed 's/#//g'"
+    if QA_VAGRANT_LIBVIRT_VERSION == "master"
+      v.vm.provision :shell, :inline => "git clone https://github.com/vagrant-libvirt/vagrant-libvirt.git"
+      v.vm.provision :shell, :inline => "cd vagrant-libvirt && gem build vagrant-libvirt.gemspec"
+    end  
+    v.vm.provision :shell, :inline => "vagrant plugin install #{QA_VAGRANT_LIBVIRT_INSTALL_OPTS}"
+    # Workarond for Vagrant bug
+    if QA_VAGRANT_VERSION == "1.8.7" || QA_VAGRANT_VERSION == "1.9.0" || QA_VAGRANT_VERSION == "1.9.1"
+      v.vm.provision :shell, :inline => 'for i in /opt/vagrant/embedded/gems/gems/vagrant-*/plugins/guests/tinycore/guest.rb; do sed -i "s/Core Linux/Core.*Linux/" $i; done'
+    end
     # Testing nested VM provisioning via nested kvm 
     v.vm.provision "shell", inline: <<-EOC
 cat <<-'EOF' > Vagrantfile
@@ -340,11 +426,19 @@ EOC
       domain.cpu_mode = 'host-passthrough'
     end
     v.vm.provision :shell, :inline => 'dnf -y update'
-    v.vm.provision :shell, :inline => 'dnf -y install qemu libvirt libvirt-devel ruby-devel wget gcc'
+    v.vm.provision :shell, :inline => 'dnf -y install qemu libvirt libvirt-devel ruby-devel wget gcc git'
     v.vm.provision :reload
-    v.vm.provision :shell, :inline => 'wget -q https://releases.hashicorp.com/vagrant/1.8.6/vagrant_1.8.6_x86_64.rpm'
-    v.vm.provision :shell, :inline => 'rpm -Uvh --force vagrant_1.8.6_x86_64.rpm | sed "s/#//g"'
-    v.vm.provision :shell, :inline => 'vagrant plugin install vagrant-libvirt'
+    v.vm.provision :shell, :inline => "wget --no-check-certificate --no-verbose https://releases.hashicorp.com/vagrant/#{QA_VAGRANT_VERSION}/vagrant_#{QA_VAGRANT_VERSION}_x86_64.rpm"
+    v.vm.provision :shell, :inline => "rpm -Uvh --force vagrant_#{QA_VAGRANT_VERSION}_x86_64.rpm | sed 's/#//g'"
+    if QA_VAGRANT_LIBVIRT_VERSION == "master"
+      v.vm.provision :shell, :inline => "git clone https://github.com/vagrant-libvirt/vagrant-libvirt.git"
+      v.vm.provision :shell, :inline => "cd vagrant-libvirt && gem build vagrant-libvirt.gemspec"
+    end  
+    v.vm.provision :shell, :inline => "vagrant plugin install #{QA_VAGRANT_LIBVIRT_INSTALL_OPTS}"
+    # Workarond for Vagrant bug
+    if QA_VAGRANT_VERSION == "1.8.7" || QA_VAGRANT_VERSION == "1.9.0" || QA_VAGRANT_VERSION == "1.9.1"
+      v.vm.provision :shell, :inline => 'for i in /opt/vagrant/embedded/gems/gems/vagrant-*/plugins/guests/tinycore/guest.rb; do sed -i "s/Core Linux/Core.*Linux/" $i; done'
+    end
     # Testing nested VM provisioning via nested kvm 
     v.vm.provision "shell", inline: <<-EOC
 cat <<-'EOF' > Vagrantfile
@@ -379,11 +473,19 @@ EOC
       domain.cpu_mode = 'host-passthrough'
     end
     v.vm.provision :shell, :inline => 'dnf -y update'
-    v.vm.provision :shell, :inline => 'dnf -y install qemu libvirt libvirt-devel ruby-devel wget gcc'
+    v.vm.provision :shell, :inline => 'dnf -y install qemu libvirt libvirt-devel ruby-devel wget gcc git'
     v.vm.provision :reload
-    v.vm.provision :shell, :inline => 'wget -q https://releases.hashicorp.com/vagrant/1.8.6/vagrant_1.8.6_x86_64.rpm'
-    v.vm.provision :shell, :inline => 'rpm -Uvh --force vagrant_1.8.6_x86_64.rpm | sed "s/#//g"'
-    v.vm.provision :shell, :inline => 'vagrant plugin install vagrant-libvirt'
+    v.vm.provision :shell, :inline => "wget --no-check-certificate --no-verbose https://releases.hashicorp.com/vagrant/#{QA_VAGRANT_VERSION}/vagrant_#{QA_VAGRANT_VERSION}_x86_64.rpm"
+    v.vm.provision :shell, :inline => "rpm -Uvh --force vagrant_#{QA_VAGRANT_VERSION}_x86_64.rpm | sed 's/#//g'"
+    if QA_VAGRANT_LIBVIRT_VERSION == "master"
+      v.vm.provision :shell, :inline => "git clone https://github.com/vagrant-libvirt/vagrant-libvirt.git"
+      v.vm.provision :shell, :inline => "cd vagrant-libvirt && gem build vagrant-libvirt.gemspec"
+    end  
+    v.vm.provision :shell, :inline => "vagrant plugin install #{QA_VAGRANT_LIBVIRT_INSTALL_OPTS}"
+    # Workarond for Vagrant bug
+    if QA_VAGRANT_VERSION == "1.8.7" || QA_VAGRANT_VERSION == "1.9.0" || QA_VAGRANT_VERSION == "1.9.1"
+      v.vm.provision :shell, :inline => 'for i in /opt/vagrant/embedded/gems/gems/vagrant-*/plugins/guests/tinycore/guest.rb; do sed -i "s/Core Linux/Core.*Linux/" $i; done'
+    end
     # Testing nested VM provisioning via nested kvm 
     v.vm.provision "shell", inline: <<-EOC
 cat <<-'EOF' > Vagrantfile
@@ -418,11 +520,19 @@ EOC
       domain.cpu_mode = 'host-passthrough'
     end
     v.vm.provision :shell, :inline => 'dnf -y update'
-    v.vm.provision :shell, :inline => 'dnf -y install qemu libvirt libvirt-devel ruby-devel wget gcc'
+    v.vm.provision :shell, :inline => 'dnf -y install qemu libvirt libvirt-devel ruby-devel wget gcc git'
     v.vm.provision :reload
-    v.vm.provision :shell, :inline => 'wget -q https://releases.hashicorp.com/vagrant/1.8.6/vagrant_1.8.6_x86_64.rpm'
-    v.vm.provision :shell, :inline => 'rpm -Uvh --force vagrant_1.8.6_x86_64.rpm | sed "s/#//g"'
-    v.vm.provision :shell, :inline => 'vagrant plugin install vagrant-libvirt'
+    v.vm.provision :shell, :inline => "wget --no-check-certificate --no-verbose https://releases.hashicorp.com/vagrant/#{QA_VAGRANT_VERSION}/vagrant_#{QA_VAGRANT_VERSION}_x86_64.rpm"
+    v.vm.provision :shell, :inline => "rpm -Uvh --force vagrant_#{QA_VAGRANT_VERSION}_x86_64.rpm | sed 's/#//g'"
+    if QA_VAGRANT_LIBVIRT_VERSION == "master"
+      v.vm.provision :shell, :inline => "git clone https://github.com/vagrant-libvirt/vagrant-libvirt.git"
+      v.vm.provision :shell, :inline => "cd vagrant-libvirt && gem build vagrant-libvirt.gemspec"
+    end  
+    v.vm.provision :shell, :inline => "vagrant plugin install #{QA_VAGRANT_LIBVIRT_INSTALL_OPTS}"
+    # Workarond for Vagrant bug
+    if QA_VAGRANT_VERSION == "1.8.7" || QA_VAGRANT_VERSION == "1.9.0" || QA_VAGRANT_VERSION == "1.9.1"
+      v.vm.provision :shell, :inline => 'for i in /opt/vagrant/embedded/gems/gems/vagrant-*/plugins/guests/tinycore/guest.rb; do sed -i "s/Core Linux/Core.*Linux/" $i; done'
+    end
     # Testing nested VM provisioning via nested kvm 
     v.vm.provision "shell", inline: <<-EOC
 cat <<-'EOF' > Vagrantfile
@@ -464,11 +574,19 @@ EOC
 #    # We need to wait a bit here since the above command does a full reboot
 #    v.vm.provision "wait-upgrade", type: "local_shell", command: "sleep 4m"
     v.vm.provision :shell, :inline => 'dnf -y update'
-    v.vm.provision :shell, :inline => 'dnf -y install qemu libvirt libvirt-devel ruby-devel wget gcc'
-    v.vm.provision :shell, :inline => 'wget -q https://releases.hashicorp.com/vagrant/1.8.6/vagrant_1.8.6_x86_64.rpm'
+    v.vm.provision :shell, :inline => 'dnf -y install qemu libvirt libvirt-devel ruby-devel wget gcc git'
+    v.vm.provision :shell, :inline => "wget --no-check-certificate --no-verbose https://releases.hashicorp.com/vagrant/#{QA_VAGRANT_VERSION}/vagrant_#{QA_VAGRANT_VERSION}_x86_64.rpm"
     v.vm.provision :reload
-    v.vm.provision :shell, :inline => 'rpm -Uvh --force vagrant_1.8.6_x86_64.rpm | sed "s/#//g"'
-    v.vm.provision :shell, :inline => 'vagrant plugin install vagrant-libvirt'
+    v.vm.provision :shell, :inline => "rpm -Uvh --force vagrant_#{QA_VAGRANT_VERSION}_x86_64.rpm | sed 's/#//g'"
+    if QA_VAGRANT_LIBVIRT_VERSION == "master"
+      v.vm.provision :shell, :inline => "git clone https://github.com/vagrant-libvirt/vagrant-libvirt.git"
+      v.vm.provision :shell, :inline => "cd vagrant-libvirt && gem build vagrant-libvirt.gemspec"
+    end  
+    v.vm.provision :shell, :inline => "vagrant plugin install #{QA_VAGRANT_LIBVIRT_INSTALL_OPTS}"
+    # Workarond for Vagrant bug
+    if QA_VAGRANT_VERSION == "1.8.7" || QA_VAGRANT_VERSION == "1.9.0" || QA_VAGRANT_VERSION == "1.9.1"
+      v.vm.provision :shell, :inline => 'for i in /opt/vagrant/embedded/gems/gems/vagrant-*/plugins/guests/tinycore/guest.rb; do sed -i "s/Core Linux/Core.*Linux/" $i; done'
+    end
     # Testing nested VM provisioning via nested kvm 
     v.vm.provision "shell", inline: <<-EOC
 cat <<-'EOF' > Vagrantfile
@@ -510,8 +628,16 @@ EOC
 #    v.vm.provision "wait-upgrade", type: "local_shell", command: "sleep 4m"
     v.vm.provision :shell, :inline => 'pacman -Suyu --noconfirm --noprogressbar'
     v.vm.provision :reload
-    v.vm.provision :shell, :inline => 'pacman -S --noconfirm --noprogressbar vagrant'
-    v.vm.provision :shell, :inline => 'vagrant plugin install vagrant-libvirt'
+    v.vm.provision :shell, :inline => 'pacman -S --noconfirm --noprogressbar vagrant git'
+    if QA_VAGRANT_LIBVIRT_VERSION == "master"
+      v.vm.provision :shell, :inline => "git clone https://github.com/vagrant-libvirt/vagrant-libvirt.git"
+      v.vm.provision :shell, :inline => "cd vagrant-libvirt && gem build vagrant-libvirt.gemspec"
+    end  
+    v.vm.provision :shell, :inline => "vagrant plugin install #{QA_VAGRANT_LIBVIRT_INSTALL_OPTS}"
+    # Workarond for Vagrant bug
+    if QA_VAGRANT_VERSION == "1.8.7" || QA_VAGRANT_VERSION == "1.9.0" || QA_VAGRANT_VERSION == "1.9.1"
+      v.vm.provision :shell, :inline => 'for i in /opt/vagrant/embedded/gems/gems/vagrant-*/plugins/guests/tinycore/guest.rb; do sed -i "s/Core Linux/Core.*Linux/" $i; done'
+    end
     # Testing nested VM provisioning via nested kvm 
     v.vm.provision "shell", inline: <<-EOC
 cat <<-'EOF' > Vagrantfile
