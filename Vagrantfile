@@ -62,7 +62,7 @@ Vagrant.configure(2) do |config|
     v.vm.box = "alxgrh/ubuntu-precise-x86_64"
     v.vm.synced_folder ".", "/vagrant", disabled: true
     v.vm.provider :libvirt do |domain|
-      domain.memory = 512
+      domain.memory = 1024
       domain.cpus = 1
       domain.nested = true
       domain.cpu_mode = 'host-passthrough'
@@ -113,7 +113,7 @@ EOC
     v.vm.box = "alxgrh/ubuntu-trusty-x86_64"
     v.vm.synced_folder ".", "/vagrant", disabled: true
     v.vm.provider :libvirt do |domain|
-      domain.memory = 512
+      domain.memory = 1024
       domain.cpus = 1
       domain.nested = true
       domain.cpu_mode = 'host-passthrough'
@@ -167,7 +167,7 @@ EOC
     v.vm.box = "mkutsevol/xenial"
     v.vm.synced_folder ".", "/vagrant", disabled: true
     v.vm.provider :libvirt do |domain|
-      domain.memory = 512
+      domain.memory = 1024
       domain.cpus = 1
       domain.nested = true
       domain.cpu_mode = 'host-passthrough'
@@ -217,7 +217,7 @@ EOC
     v.vm.box = "debian/jessie64"
     v.vm.synced_folder ".", "/vagrant", disabled: true
     v.vm.provider :libvirt do |domain|
-      domain.memory = 512
+      domain.memory = 1024
       domain.cpus = 1
       domain.nested = true
       domain.cpu_mode = 'host-passthrough'
@@ -276,7 +276,7 @@ EOC
     v.vm.box = "dliappis/centos65minlibvirt"
     v.vm.synced_folder ".", "/vagrant", disabled: true
     v.vm.provider :libvirt do |domain|
-      domain.memory = 512
+      domain.memory = 1024
       domain.cpus = 1
       domain.nested = true
       domain.cpu_mode = 'host-passthrough'
@@ -325,7 +325,7 @@ EOC
     v.vm.box = "centos/7"
     v.vm.synced_folder ".", "/vagrant", disabled: true
     v.vm.provider :libvirt do |domain|
-      domain.memory = 512
+      domain.memory = 1024
       domain.cpus = 1
       domain.nested = true
       domain.cpu_mode = 'host-passthrough'
@@ -373,7 +373,7 @@ EOC
     v.vm.box = "uvsmtid/fedora-21-server-minimal"
     v.vm.synced_folder ".", "/vagrant", disabled: true
     v.vm.provider :libvirt do |domain|
-      domain.memory = 512
+      domain.memory = 1024
       domain.cpus = 1
       domain.nested = true
       domain.cpu_mode = 'host-passthrough'
@@ -420,7 +420,7 @@ EOC
     v.vm.box = "rarguello/fedora-22"
     v.vm.synced_folder ".", "/vagrant", disabled: true
     v.vm.provider :libvirt do |domain|
-      domain.memory = 512
+      domain.memory = 1024
       domain.cpus = 1
       domain.nested = true
       domain.cpu_mode = 'host-passthrough'
@@ -467,7 +467,7 @@ EOC
     v.vm.box = "fedora/23-cloud-base"
     v.vm.synced_folder ".", "/vagrant", disabled: true
     v.vm.provider :libvirt do |domain|
-      domain.memory = 512
+      domain.memory = 1024
       domain.cpus = 1
       domain.nested = true
       domain.cpu_mode = 'host-passthrough'
@@ -514,7 +514,7 @@ EOC
     v.vm.box = "fedora/23-cloud-base"
     v.vm.synced_folder ".", "/vagrant", disabled: true
     v.vm.provider :libvirt do |domain|
-      domain.memory = 512
+      domain.memory = 1024
       domain.cpus = 1
       domain.nested = true
       domain.cpu_mode = 'host-passthrough'
@@ -561,7 +561,7 @@ EOC
     v.vm.box = "fedora/24-cloud-base"
     v.vm.synced_folder ".", "/vagrant", disabled: true
     v.vm.provider :libvirt do |domain|
-      domain.memory = 512
+      domain.memory = 1024
       domain.cpus = 1
       domain.nested = true
       domain.cpu_mode = 'host-passthrough'
@@ -614,7 +614,7 @@ EOC
     v.vm.box = "wholebits/arch-64"
     v.vm.synced_folder ".", "/vagrant", disabled: true
     v.vm.provider :libvirt do |domain|
-      domain.memory = 512
+      domain.memory = 1024
       domain.cpus = 1
       domain.nested = true
       domain.cpu_mode = 'host-passthrough'
