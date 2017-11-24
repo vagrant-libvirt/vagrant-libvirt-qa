@@ -16,7 +16,7 @@ for vagrant in $vagrants; do
     for vagrantlibvirt in $vagrantlibvirts; do
         echo -n "|$vagrant|$vagrantlibvirt|"
         for distro in $distros; do
-            echo -n "[![Build Status](https://jenkins.infernix.net/job/vagrant-libvirt-qa/QA_VAGRANT_LIBVIRT_VERSION=${vagrantlibvirt},QA_VAGRANT_VERSION=${vagrant},distro=${distro}/badge/icon)](https://jenkins.infernix.net/job/vagrant-libvirt-qa/QA_VAGRANT_LIBVIRT_VERSION=${vagrantlibvirt},QA_VAGRANT_VERSION=${vagrant},distro=${distro}/)|"
+            echo -n "[![Build Status](https://jenkins.infernix.net/job/vagrant-libvirt-qa/qa_vagrant_libvirt_version=${vagrantlibvirt},qa_vagrant_version=${vagrant},distro=${distro}/badge/icon)](https://jenkins.infernix.net/job/vagrant-libvirt-qa/qa_vagrant_libvirt_version=${vagrantlibvirt},qa_vagrant_version=${vagrant},distro=${distro}/)|"
         done
         echo ""
     done
