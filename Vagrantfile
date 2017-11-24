@@ -129,6 +129,8 @@ EOC
       v.vm.provision :shell, :inline => "git clone https://github.com/vagrant-libvirt/vagrant-libvirt.git"
       v.vm.provision :shell, :inline => "cd vagrant-libvirt && gem build vagrant-libvirt.gemspec"
     end  
+    # Workaround for ruby bug
+    v.vm.provision :shell, :inline => "REALLY_GEM_UPDATE_SYSTEM=y gem update --system"
     v.vm.provision :shell, :inline => "vagrant plugin install #{QA_VAGRANT_LIBVIRT_INSTALL_OPTS}"
     # Workarond for Vagrant bug
     if QA_VAGRANT_VERSION == "1.8.7" || QA_VAGRANT_VERSION == "1.9.0" || QA_VAGRANT_VERSION == "1.9.1"
@@ -341,8 +343,8 @@ EOC
       domain.cpu_mode = 'host-passthrough'
     end
     v.vm.provision :shell, :inline => 'yum -y update'
-    v.vm.provision :shell, :inline => 'yum -y install qemu libvirt libvirt-devel ruby-devel wget gcc acpid qemu-kvm git'
-    v.vm.provision :shell, :inline => 'chkconfig --enable acpid; service acpid restart'
+    v.vm.provision :shell, :inline => 'yum -y install qemu libvirt libvirt-devel ruby-devel wget gcc acpid qemu-kvm git rubygems'
+    v.vm.provision :shell, :inline => 'chkconfig acpid on; service acpid restart'
     v.vm.provision :reload
     v.vm.provision :shell, :inline => "wget --no-check-certificate --no-verbose https://releases.hashicorp.com/vagrant/#{QA_VAGRANT_VERSION}/vagrant_#{QA_VAGRANT_VERSION}_x86_64.rpm"
     v.vm.provision :shell, :inline => "rpm -Uvh --force vagrant_#{QA_VAGRANT_VERSION}_x86_64.rpm | sed 's/#//g'"
