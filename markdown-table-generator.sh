@@ -1,7 +1,7 @@
 #!/bin/bash
 
-distros="ubuntu-12.04 ubuntu-14.04 ubuntu-16.04 debian-8 debian-9 centos-6 centos-7 fedora-21 fedora-22 fedora-23 fedora-24 arch"
-vagrants="2.0.1"
+distros="ubuntu-18.04 debian-9 centos-7 fedora-29 arch"
+vagrants="2.2.7"
 vagrantlibvirts="master"
 
 echo -n "|Vagrant|Vagrant-libvirt|"
