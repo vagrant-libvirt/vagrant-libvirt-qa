@@ -1,0 +1,3 @@
+[submodule "vagrant-libvirt"]
+	path = vagrant-libvirt
+	url = ../vagrant-libvirt.git

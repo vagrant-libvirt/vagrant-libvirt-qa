@@ -1,0 +1,74 @@
+name: Distribution Install
+
+on:
+  pull_request:
+
+jobs:
+  generate-matrix:
+    runs-on: ubuntu-20.04
+    outputs:
+      matrix: ${{ steps.generate-matrix.outputs.matrix }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Generate matrix
+      id: generate-matrix
+      run: |
+        tests="[$(grep config.vm.define Vagrantfile | awk '{print $2}' | tr '\n' ',' | head -c -1)]"
+        echo "::set-output name=matrix::${tests}"
+
+  verify-install:
+    needs: generate-matrix
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        test_name: ${{ fromJSON(needs.generate-matrix.outputs.matrix) }}
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: recursive
+    - name: Set up libvirt
+      run: |
+        VAGRANT_LIBVIRT_VERSION=latest ./scripts/install.bash 2.2.19
+
+        # start daemon
+        sudo systemctl start libvirtd
+
+        # add user to group
+        sudo usermod -a -G libvirt $USER
+    - uses: actions/cache@v2
+      with:
+        path: ~/.vagrant.d/boxes
+        key: ${{ runner.os }}-${{ matrix.test_name }}
+        restore-keys: |
+          ${{ runner.os }}-
+    - name: select target vagrant-libvirt version
+      run: |
+        changed_files=$(git diff --name-only origin/${GITHUB_BASE_REF}...HEAD)
+        if [[ *".gitmodules"* == "${changed_files}" ]]
+        then
+            VAGRANT_LIBVIRT_VERSION="pr"
+        else
+            VAGRANT_LIBVIRT_VERSION="latest"
+        fi
+
+        echo "QA_VAGRANT_LIBVIRT_VERSION=${VAGRANT_LIBVIRT_VERSION}" >> ${GITHUB_ENV}
+    - name: launch target distro
+      run: |
+        # run under libvirt group
+        sg libvirt -c "vagrant up --no-provision ${{ matrix.test_name }}"
+
+    - name: test vagrant-libvirt in target distro
+      run: |
+        # run under libvirt group
+        sg libvirt -c "vagrant provision ${{ matrix.test_name }}"
+
+  finish:
+    needs: verify-install
+    runs-on: ubuntu-latest
+    steps:
+    - name: Matrix finished
+      run: |
+        echo "success"

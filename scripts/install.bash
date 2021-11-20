@@ -309,7 +309,15 @@ function install_vagrant() {
 }
 
 function install_vagrant_libvirt() {
-    if [[ "${VAGRANT_LIBVIRT_VERSION}" == "master" ]]
+    if [[ "${VAGRANT_LIBVIRT_VERSION}" == "pr" ]]
+    then
+        cd vagrant-libvirt
+        bundle install
+        rm -rf ./pkg
+        bundle exec rake build
+        vagrant plugin install ./pkg/vagrant-libvirt-*.gem
+        cd -
+    elif [[ "${VAGRANT_LIBVIRT_VERSION}" == "master" ]]
     then
         rm -rf build
         mkdir build
