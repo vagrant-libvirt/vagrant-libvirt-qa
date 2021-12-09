@@ -44,7 +44,7 @@ def setup_vm_provider(vm)
     domain.memory = 2048
     domain.cpus = 2
     domain.nested = true
-    #domain.cpu_mode = 'host-passthrough'
+    #domain.cpu_mode = 'host-model'
   end
 end
 
