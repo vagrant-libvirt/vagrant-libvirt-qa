@@ -13,7 +13,7 @@ jobs:
     - name: Generate matrix
       id: generate-matrix
       run: |
-        tests="[$(grep config.vm.define Vagrantfile | awk '{print $2}' | tr '\n' ',' | head -c -1)]"
+        tests="$(ruby boxes.rb | jq -c -r '. | keys')"
         echo "::set-output name=matrix::${tests}"
 
   verify-install:
