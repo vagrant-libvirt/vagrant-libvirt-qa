@@ -35,8 +35,15 @@ Vagrant.configure(2) do |config|
       machine.vm.provider :docker do |docker, override|
         docker.build_dir = "docker/#{name}"
         docker.has_ssh = true
-        docker.volumes = ["/sys/fs/cgroup:/sys/fs/cgroup"]
-        docker.create_args = ["--privileged"]
+        docker.volumes = [
+          "/sys/fs/cgroup:/sys/fs/cgroup:ro",
+          "/sys/fs/cgroup/systemd:/sys/fs/cgroup/systemd:rw",
+        ]
+        docker.create_args = [
+          "--privileged",
+          "--tmpfs=/run",
+          "--tmpfs=/tmp",
+        ]
         settings.fetch(:docker,{}).fetch(:provision, []).each do |p|
           override.vm.provision :shell, **p
         end
