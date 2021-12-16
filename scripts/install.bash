@@ -28,7 +28,7 @@ function setup_apt() {
 
 function setup_arch() {
     sudo pacman -Suyu --noconfirm --noprogressbar
-    sudo pacman -Rd --nodeps --noconfirm iptables
+    sudo pacman -Qs 'iptables' | grep "local" | grep "iptables " && sudo pacman -Rd --nodeps --noconfirm iptables
     # need to remove iptables to allow ebtables to be installed
     sudo pacman -S --needed --noprogressbar --noconfirm  \
         autoconf \
@@ -84,6 +84,9 @@ function setup_centos() {
         gcc \
         gcc-c++ \
         git \
+        libguestfs-tools \
+        libvirt \
+        libvirt-devel \
         make \
         rpm-build \
         ruby-devel \
@@ -112,20 +115,20 @@ function setup_debian() {
 function setup_fedora() {
     sudo dnf -y update
     sudo dnf -y install \
+        @virtualization \
         autoconf \
         automake \
         binutils \
+        byacc \
         cmake \
         gcc \
+        gcc-c++ \
         git \
         libguestfs-tools \
-        libvirt \
-        libvirt-daemon-driver-qemu \
         libvirt-devel \
         make \
-        qemu-kvm \
-        ruby-devel \
         wget \
+        zlib-devel \
         ;
     sudo systemctl restart libvirtd
 }
@@ -153,6 +156,7 @@ function setup_ubuntu() {
         qemu-utils \
         wget \
         ;
+    restart_libvirt
 }
 
 function setup_distro() {
@@ -209,7 +213,7 @@ function build_libssh() {
 
     mkdir -p ${dir}-build
     pushd ${dir}-build
-    cmake ../${dir} -DOPENSSL_ROOT_DIR=/opt/vagrant/embedded/
+    cmake ${dir} -DOPENSSL_ROOT_DIR=/opt/vagrant/embedded/
     make
     sudo cp lib/libssh* /opt/vagrant/embedded/lib64
     popd
@@ -231,15 +235,17 @@ function setup_rpm_sources_centos() {
     rpmname="${3:-${pkg}}"
 
     [[ ! -d ${pkg} ]] && git clone https://git.centos.org/rpms/${pkg}
-    cd ${pkg}
+    pushd ${pkg}
     nvr=$(rpm -q --queryformat "${pkg}-%{version}-%{release}" ${rpmname})
     nv=$(rpm -q --queryformat "${pkg}-%{version}" ${rpmname})
     git checkout $(git tag -l | grep "${nvr}\$" | tail -n1)
     into_srpm.sh -d c8s
-    cd BUILD
+    pushd BUILD
     tar xf ../SOURCES/${nv}.tar.*z
 
-    basedir=${nv}
+    basedir=$(realpath ${nv})
+    popd
+    popd
 }
 
 function patch_vagrant_centos_8() {
@@ -265,14 +271,15 @@ function setup_rpm_sources_fedora() {
     nvr=$(rpm -q --queryformat "${pkg}-%{version}-%{release}" ${rpmname})
     nv=$(rpm -q --queryformat "${pkg}-%{version}" ${rpmname})
     mkdir -p ${pkg}
-    cd ${pkg}
+    pushd ${pkg}
 
     [[ ! -e ${nvr}.src.rpm ]] && dnf download --source ${rpmname}
     rpm2cpio ${nvr}.src.rpm | cpio -imdV
     rm -rf ${nv}
     tar xf ${nv}.tar.*z
 
-    basedir=${nv}
+    basedir=$(realpath ${nv})
+    popd
 }
 
 function patch_vagrant_fedora() {
@@ -311,22 +318,22 @@ function install_vagrant() {
 function install_vagrant_libvirt() {
     if [[ "${VAGRANT_LIBVIRT_VERSION}" == "pr" ]]
     then
-        cd vagrant-libvirt
+        pushd vagrant-libvirt
         bundle install
         rm -rf ./pkg
         bundle exec rake build
         vagrant plugin install ./pkg/vagrant-libvirt-*.gem
-        cd -
+        popd
     elif [[ "${VAGRANT_LIBVIRT_VERSION}" == "master" ]]
     then
         rm -rf build
         mkdir build
         git clone https://github.com/vagrant-libvirt/vagrant-libvirt.git
-        cd vagrant-libvirt
+        pushd vagrant-libvirt
         bundle install
         bundle exec rake build
         vagrant plugin install ./pkg/vagrant-libvirt-*.gem
-        cd -
+        popd
     elif [[ "${VAGRANT_LIBVIRT_VERSION}" == "latest" ]]
     then
         vagrant plugin install vagrant-libvirt
@@ -335,6 +342,7 @@ function install_vagrant_libvirt() {
     fi
 }
 
+echo "Starting vagrant-libvirt installation script"
 
 VAGRANT_VERSION=$1
 DISTRO=${DISTRO:-$(awk -F= '/^ID=/{print $2}' /etc/os-release | tr -d '"' | tr '[A-Z]' '[a-z]')}
@@ -345,3 +353,5 @@ setup_distro ${DISTRO} ${DISTRO_VERSION}
 install_vagrant ${VAGRANT_VERSION} ${DISTRO} ${DISTRO_VERSION}
 
 install_vagrant_libvirt
+
+echo "Finished vagrant-libvirt installation script"

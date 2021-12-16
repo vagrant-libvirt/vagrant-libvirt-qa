@@ -19,6 +19,8 @@ jobs:
   verify-install:
     needs: generate-matrix
     runs-on: ubuntu-20.04
+    env:
+      VAGRANT_DEFAULT_PROVIDER: docker
     strategy:
       fail-fast: false
       matrix:
@@ -57,13 +59,11 @@ jobs:
         echo "QA_VAGRANT_LIBVIRT_VERSION=${VAGRANT_LIBVIRT_VERSION}" >> ${GITHUB_ENV}
     - name: launch target distro
       run: |
-        # run under libvirt group
-        sg libvirt -c "vagrant up --no-provision ${{ matrix.test_name }}"
+        vagrant up --no-provision ${{ matrix.test_name }}
 
     - name: test vagrant-libvirt in target distro
       run: |
-        # run under libvirt group
-        sg libvirt -c "vagrant provision ${{ matrix.test_name }}"
+        vagrant provision ${{ matrix.test_name }}
 
   finish:
     needs: verify-install
