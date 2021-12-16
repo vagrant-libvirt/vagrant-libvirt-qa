@@ -89,6 +89,9 @@ function setup_centos() {
         libvirt \
         libvirt-devel \
         make \
+        qemu \
+        qemu-kvm \
+        qemu-system-x86 \
         rpm-build \
         ruby-devel \
         wget \
@@ -111,6 +114,7 @@ function setup_debian() {
         qemu-utils \
         wget \
         ;
+    sudo systemctl restart libvirtd
 }
 
 function setup_fedora() {
