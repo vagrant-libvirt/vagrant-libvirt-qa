@@ -66,6 +66,7 @@ function setup_centos_7() {
         make \
         qemu \
         qemu-kvm \
+        qemu-system-x86 \
         ruby-devel \
         wget \
         ;
