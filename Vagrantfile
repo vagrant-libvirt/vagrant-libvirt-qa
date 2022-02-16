@@ -42,6 +42,7 @@ Vagrant.configure(2) do |config|
         ]
         docker.create_args = [
           "--privileged",
+          "--security-opt", "apparmor=unconfined",
           "--tmpfs=/run",
           "--tmpfs=/tmp:exec",
         ]
