@@ -2,6 +2,8 @@ FROM centos:8
 
 SHELL ["/bin/bash", "-c"]
 
+RUN sed -i -e 's/mirrorlist/#mirrorlist/g' -e 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+
 RUN dnf update -y && \
     dnf install -y \
         openssh-clients \
