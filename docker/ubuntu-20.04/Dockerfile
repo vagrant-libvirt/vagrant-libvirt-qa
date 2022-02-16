@@ -2,6 +2,9 @@ FROM ubuntu:20.04
 
 SHELL ["/bin/bash", "-c"]
 
+# undo the minimizing done by upstream as expect to login to the resulting container
+RUN yes | unminimize
+
 RUN apt update \
     && apt install -y \
         openssh-server \

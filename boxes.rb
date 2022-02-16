@@ -48,11 +48,6 @@ BOXES = {
     :libvirt => {
       :box => "generic/ubuntu2004",
     },
-    :docker => {
-      :post_provision => [
-        {:inline => 'ln -s /etc/apparmor.d/usr.sbin.libvirtd /etc/apparmor.d/disable/usr.sbin.libvirtd'},
-      ],
-    }
   },
   'debian-10' => {
     :libvirt => {
