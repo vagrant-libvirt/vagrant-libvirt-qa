@@ -67,6 +67,12 @@ Vagrant.configure(2) do |config|
         machine.vm.provision :shell, **p
       end
 
+      machine.vm.provider :docker do |domain, override|
+        settings.fetch(:docker, {}).fetch(:post_provision, []).each do |p|
+          override.vm.provision :shell, **p
+        end
+      end
+
       add_test_provisions(machine.vm)
     end
   end
