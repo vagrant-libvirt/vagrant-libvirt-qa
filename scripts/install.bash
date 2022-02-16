@@ -53,6 +53,8 @@ function setup_arch() {
 
 function setup_centos_7() {
     sudo yum -y update
+    sudo yum -y install centos-release-qemu-ev
+    sudo yum -y update
     sudo yum -y install \
         autoconf \
         automake \
@@ -65,8 +67,7 @@ function setup_centos_7() {
         libvirt-devel \
         make \
         qemu \
-        qemu-kvm \
-        qemu-system-x86 \
+        qemu-kvm-ev \
         ruby-devel \
         wget \
         ;
