@@ -39,6 +39,7 @@ Vagrant.configure(2) do |config|
         docker.volumes = [
           "/sys/fs/cgroup:/sys/fs/cgroup:ro",
           "/sys/fs/cgroup/systemd:/sys/fs/cgroup/systemd:rw",
+          "/dev:/dev",
         ]
         docker.create_args = [
           "--privileged",
