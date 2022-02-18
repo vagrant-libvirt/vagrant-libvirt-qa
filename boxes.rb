@@ -48,6 +48,11 @@ BOXES = {
     :libvirt => {
       :box => "generic/ubuntu2004",
     },
+    :docker => {
+      :post_install => [
+        {:inline => "sed -i -e 's:#namespaces =:namespaces = []:' /etc/libvirt/qemu.conf"},
+      ],
+    },
   },
   'debian-10' => {
     :libvirt => {
