@@ -31,6 +31,9 @@ jobs:
       with:
         fetch-depth: 0
         submodules: recursive
+    - name: Disable apparmor to allow containers use alternative paths
+      run: |
+        sudo systemctl stop apparmor
     - name: Set up libvirt
       run: |
         VAGRANT_LIBVIRT_VERSION=latest ./scripts/install.bash 2.2.19
