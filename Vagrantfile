@@ -44,6 +44,7 @@ Vagrant.configure(2) do |config|
           "--privileged",
           "--security-opt", "apparmor=unconfined",
           "--tmpfs=/run",
+          "--tmpfs=/tmp:exec",
         ]
         settings.fetch(:docker,{}).fetch(:provision, []).each do |p|
           override.vm.provision :shell, **p
