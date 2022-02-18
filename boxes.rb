@@ -50,7 +50,7 @@ BOXES = {
     },
     :docker => {
       :post_install => [
-        {:inline => "sed -i -e 's:#namespaces =:namespaces = []:' /etc/libvirt/qemu.conf"},
+        {:inline => 'qemu-system-x86_64 -chardev pty,id=charserial0 -device isa-serial,chardev=charserial0,id=serial0'},
       ],
     },
   },
