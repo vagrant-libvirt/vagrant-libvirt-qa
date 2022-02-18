@@ -101,6 +101,7 @@ DEFAULT_PROVISION = [
   {:privileged => false, :path => './scripts/install.bash', :args => QA_VAGRANT_VERSION, :env => INSTALL_ENV_VARS},
   {:reset => true, :inline => 'usermod -a -G libvirt vagrant'},
   {:privileged => false, :inline => 'virsh --connect qemu:///system capabilities'},
+  {:privileged => false, :inline => 'virsh uri'},
 ]
 
 if __FILE__ == $0
