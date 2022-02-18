@@ -53,8 +53,8 @@ Vagrant.configure(2) do |config|
 
       machine.vm.provider :libvirt do |domain, override|
         override.vm.box = settings[:libvirt][:box]
-        domain.driver = 'kvm'
-        domain.memory = 2048
+        domain.driver = 'qemu'
+        domain.memory = 4096
         domain.cpus = 2
         domain.nested = true
         domain.disk_driver :io => 'threads', :cache => 'unsafe'
