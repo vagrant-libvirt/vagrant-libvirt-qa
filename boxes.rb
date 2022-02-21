@@ -14,18 +14,13 @@ else
   QA_VAGRANT_VERSION = ENV['QA_VAGRANT_VERSION']
 end
 
-if ENV['QA_VAGRANT_LIBVIRT_VERSION'].nil?
-  # If not specified, we just install latest published version
-  QA_VAGRANT_LIBVIRT_VERSION = "latest"
-end
-
 APT_ENV_VARS = {
   'DEBIAN_FRONTEND': 'noninteractive',
   'DEBCONF_NONINTERACTIVE_SEEN': true,
 }
 
 INSTALL_ENV_VARS = {
-  'VAGRANT_LIBVIRT_VERSION': QA_VAGRANT_LIBVIRT_VERSION,
+  'VAGRANT_LIBVIRT_VERSION': ENV.fetch('QA_VAGRANT_LIBVIRT_VERSION', 'latest'),
 }
 
 BOXES = {
