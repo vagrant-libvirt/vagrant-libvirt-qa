@@ -21,6 +21,7 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       VAGRANT_DEFAULT_PROVIDER: libvirt
+      QA_VAGRANT_LIBVIRT_VERSION: pr
     strategy:
       fail-fast: false
       matrix:
@@ -49,15 +50,6 @@ jobs:
         key: ${{ runner.os }}-${{ matrix.test_name }}
         restore-keys: |
           ${{ runner.os }}-
-    - name: select target vagrant-libvirt version
-      run: |
-        changed_files=$(git diff --name-only origin/${GITHUB_BASE_REF}...HEAD)
-        if [[ *".gitmodules"* == "${changed_files}" ]]
-        then
-            VAGRANT_LIBVIRT_VERSION="pr"
-
-            echo "QA_VAGRANT_LIBVIRT_VERSION=${VAGRANT_LIBVIRT_VERSION}" >> ${GITHUB_ENV}
-        fi
     - name: launch target distro
       run: |
         # run under libvirt group
