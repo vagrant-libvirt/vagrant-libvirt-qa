@@ -16,14 +16,7 @@ end
 
 if ENV['QA_VAGRANT_LIBVIRT_VERSION'].nil?
   # If not specified, we just install latest published version
-  QA_VAGRANT_LIBVIRT_INSTALL_OPTS = "vagrant-libvirt"
   QA_VAGRANT_LIBVIRT_VERSION = "latest"
-elsif ENV['QA_VAGRANT_LIBVIRT_VERSION'] == "master"
-  QA_VAGRANT_LIBVIRT_INSTALL_OPTS = "../vagrant-libvirt/vagrant-libvirt-*.gem"
-  QA_VAGRANT_LIBVIRT_VERSION = "master"
-else
-  QA_VAGRANT_LIBVIRT_VERSION = ENV['QA_VAGRANT_LIBVIRT_VERSION']
-  QA_VAGRANT_LIBVIRT_INSTALL_OPTS = "vagrant-libvirt --plugin-version #{QA_VAGRANT_LIBVIRT_VERSION}"
 end
 
 APT_ENV_VARS = {

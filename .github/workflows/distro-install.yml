@@ -55,11 +55,9 @@ jobs:
         if [[ *".gitmodules"* == "${changed_files}" ]]
         then
             VAGRANT_LIBVIRT_VERSION="pr"
-        else
-            VAGRANT_LIBVIRT_VERSION="latest"
-        fi
 
-        echo "QA_VAGRANT_LIBVIRT_VERSION=${VAGRANT_LIBVIRT_VERSION}" >> ${GITHUB_ENV}
+            echo "QA_VAGRANT_LIBVIRT_VERSION=${VAGRANT_LIBVIRT_VERSION}" >> ${GITHUB_ENV}
+        fi
     - name: launch target distro
       run: |
         # run under libvirt group

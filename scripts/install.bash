@@ -320,6 +320,7 @@ function install_vagrant() {
 }
 
 function install_vagrant_libvirt() {
+    echo "Testing vagrant-libvirt version == '${VAGRANT_LIBVIRT_VERSION}'"
     if [[ "${VAGRANT_LIBVIRT_VERSION}" == "pr" ]]
     then
         pushd vagrant-libvirt
