@@ -323,7 +323,8 @@ function install_vagrant_libvirt() {
     echo "Testing vagrant-libvirt version: '${VAGRANT_LIBVIRT_VERSION}'"
     if [[ "${VAGRANT_LIBVIRT_VERSION}" == "pr" ]]
     then
-        pushd vagrant-libvirt
+        SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+        pushd ${SCRIPT_DIR}/../vagrant-libvirt
         bundle install
         rm -rf ./pkg
         bundle exec rake build
