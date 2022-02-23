@@ -185,6 +185,30 @@ function download_vagrant() {
     mv /tmp/${pkg}.tmp /tmp/${pkg}
 }
 
+function install_bundler_arch() {
+    sudo pacman -S --needed --noprogressbar --noconfirm  \
+        bundler
+}
+
+function install_bundler_centos() {
+    sudo yum -y install \
+        rubygem-bundler
+}
+
+function install_bundler_debian() {
+    sudo apt install -y \
+        bundler
+}
+
+function install_bundler_fedora() {
+    sudo dnf -y install \
+        rubygem-bundler
+}
+
+function install_bundler_ubuntu() {
+    install_bundler_debian $@
+}
+
 function install_vagrant_arch() {
     sudo pacman -S --needed --noprogressbar --noconfirm  \
         vagrant
@@ -320,9 +344,12 @@ function install_vagrant() {
 }
 
 function install_vagrant_libvirt() {
+    local distro=${1}
+
     echo "Testing vagrant-libvirt version: '${VAGRANT_LIBVIRT_VERSION}'"
     if [[ "${VAGRANT_LIBVIRT_VERSION}" == "pr" ]]
     then
+        eval install_bundler_${distro}
         SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
         pushd ${SCRIPT_DIR}/../vagrant-libvirt
         bundle install
@@ -358,6 +385,6 @@ setup_distro ${DISTRO} ${DISTRO_VERSION}
 
 install_vagrant ${VAGRANT_VERSION} ${DISTRO} ${DISTRO_VERSION}
 
-install_vagrant_libvirt
+install_vagrant_libvirt ${DISTRO}
 
 echo "Finished vagrant-libvirt installation script"
