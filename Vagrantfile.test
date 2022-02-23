@@ -14,7 +14,7 @@ Vagrant.configure(2) do |config|
       domain.management_network_address = '172.31.254.0/24'
       domain.memory = 64
       domain.cpus = 1
-      domain.fog_timeout = 10
+      domain.fog_timeout = 20
     end
     v.ssh.shell = "/bin/sh"
     v.ssh.insert_key = false

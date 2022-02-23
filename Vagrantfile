@@ -59,6 +59,9 @@ Vagrant.configure(2) do |config|
         domain.cpus = 2
         domain.nested = true
         domain.disk_driver :io => 'threads', :cache => 'unsafe'
+        if ENV.fetch('VAGRANT_LIBVIRT_DRIVER', 'kvm') == 'qemu'
+          domain.fog_timeout = 5
+        end
         settings.fetch(:libvirt, {}).fetch(:provision, []).each do |p|
           override.vm.provision :shell, **p
         end
