@@ -38,7 +38,7 @@ jobs:
         sudo systemctl stop apparmor
     - name: Set up libvirt
       run: |
-        VAGRANT_LIBVIRT_VERSION=latest ./scripts/install.bash 2.2.19
+        VAGRANT_LIBVIRT_VERSION=${QA_VAGRANT_LIBVIRT_VERSION} ./scripts/install.bash 2.2.19
 
         # start daemon
         sudo systemctl start libvirtd
