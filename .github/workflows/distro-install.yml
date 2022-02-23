@@ -22,6 +22,7 @@ jobs:
     env:
       VAGRANT_DEFAULT_PROVIDER: libvirt
       QA_VAGRANT_LIBVIRT_VERSION: pr
+      VAGRANT_LIBVIRT_DRIVER: qemu
     strategy:
       fail-fast: false
       matrix:
