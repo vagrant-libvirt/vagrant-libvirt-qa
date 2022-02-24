@@ -21,7 +21,6 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       VAGRANT_DEFAULT_PROVIDER: libvirt
-      QA_VAGRANT_LIBVIRT_VERSION: pr
       VAGRANT_LIBVIRT_DRIVER: qemu
     strategy:
       fail-fast: false
@@ -36,6 +35,9 @@ jobs:
     - name: Disable apparmor to allow containers use alternative paths
       run: |
         sudo systemctl stop apparmor
+    - name: Set up version to test
+      run: |
+        echo "QA_VAGRANT_LIBVIRT_VERSION=git-$(git submodule status -- vagrant-libvirt | cut -d' ' -f2)" >> ${GITHUB_ENV}
     - name: Set up libvirt
       run: |
         VAGRANT_LIBVIRT_VERSION=${QA_VAGRANT_LIBVIRT_VERSION} ./scripts/install.bash 2.2.19

@@ -31,7 +31,6 @@ Vagrant.configure(2) do |config|
   BOXES.each_pair do |name, settings|
     config.vm.define name do |machine|
       machine.vm.hostname = name
-      machine.vm.synced_folder ".", "/vagrant"
 
       machine.vm.provider :docker do |docker, override|
         docker.build_dir = "docker/#{name}"

@@ -185,28 +185,28 @@ function download_vagrant() {
     mv /tmp/${pkg}.tmp /tmp/${pkg}
 }
 
-function install_bundler_arch() {
+function install_rake_arch() {
     sudo pacman -S --needed --noprogressbar --noconfirm  \
-        bundler
+        rake
 }
 
-function install_bundler_centos() {
+function install_rake_centos() {
     sudo yum -y install \
-        rubygem-bundler
+        rubygem-rake
 }
 
-function install_bundler_debian() {
+function install_rake_debian() {
     sudo apt install -y \
-        bundler
+        rake
 }
 
-function install_bundler_fedora() {
+function install_rake_fedora() {
     sudo dnf -y install \
-        rubygem-bundler
+        rubygem-rake
 }
 
-function install_bundler_ubuntu() {
-    install_bundler_debian $@
+function install_rake_ubuntu() {
+    install_rake_debian $@
 }
 
 function install_vagrant_arch() {
@@ -347,24 +347,17 @@ function install_vagrant_libvirt() {
     local distro=${1}
 
     echo "Testing vagrant-libvirt version: '${VAGRANT_LIBVIRT_VERSION}'"
-    if [[ "${VAGRANT_LIBVIRT_VERSION}" == "pr" ]]
+    if [[ "${VAGRANT_LIBVIRT_VERSION:0:4}" == "git-" ]]
     then
-        eval install_bundler_${distro}
-        SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-        pushd ${SCRIPT_DIR}/../vagrant-libvirt
-        bundle install
-        rm -rf ./pkg
-        bundle exec rake build
-        vagrant plugin install ./pkg/vagrant-libvirt-*.gem
-        popd
-    elif [[ "${VAGRANT_LIBVIRT_VERSION}" == "master" ]]
-    then
-        rm -rf build
-        mkdir build
-        git clone https://github.com/vagrant-libvirt/vagrant-libvirt.git
+        eval install_rake_${distro}
+        if [[ ! -d "./vagrant-libvirt" ]]
+        then
+            git clone https://github.com/vagrant-libvirt/vagrant-libvirt.git
+        fi
         pushd vagrant-libvirt
-        bundle install
-        bundle exec rake build
+        git checkout ${VAGRANT_LIBVIRT_VERSION#git-}
+        rm -rf ./pkg
+        rake build
         vagrant plugin install ./pkg/vagrant-libvirt-*.gem
         popd
     elif [[ "${VAGRANT_LIBVIRT_VERSION}" == "latest" ]]
