@@ -36,11 +36,6 @@ BOXES = {
     :libvirt => {
       :box => "generic/ubuntu2004",
     },
-    :docker => {
-      :post_install => [
-        {:inline => 'qemu-system-x86_64 -chardev pty,id=charserial0 -device isa-serial,chardev=charserial0,id=serial0'},
-      ],
-    },
   },
   'debian-10' => {
     :libvirt => {
