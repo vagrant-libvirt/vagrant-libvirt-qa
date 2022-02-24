@@ -52,6 +52,7 @@ BOXES = {
       :box => "generic/centos7",
       :provision => [
         {:inline => 'ln -sf ../run/systemd/resolve/resolv.conf /etc/resolv.conf'},
+        {:inline => 'yum -y upgrade ca-certificates --disablerepo=epel'},
       ],
     },
   },
