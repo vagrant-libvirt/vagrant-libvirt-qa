@@ -46,9 +46,21 @@ Vagrant.configure(2) do |config|
           "--tmpfs=/run",
           "--tmpfs=/tmp:exec",
         ]
-        settings.fetch(:docker,{}).fetch(:provision, []).each do |p|
+
+        # Note that must add all provisioners using the same logic as vagrant does
+        # not order machine.vm.provision and override.vm.provision according to
+        # order in the Vagrantfile and instead override will always is appended last.
+        [].concat(
+          settings.fetch(:docker, {}).fetch(:provision, [])
+        ).concat(
+          settings.fetch(:provision, DEFAULT_PROVISION)
+        ).concat(
+          settings.fetch(:docker, {}).fetch(:post_install, [])
+        ).each do |p|
           override.vm.provision :shell, **p
         end
+
+        add_test_provisions(override.vm)
       end
 
       machine.vm.provider :libvirt do |domain, override|
@@ -61,22 +73,20 @@ Vagrant.configure(2) do |config|
         if ENV.fetch('VAGRANT_LIBVIRT_DRIVER', 'kvm') == 'qemu'
           domain.fog_timeout = 5
         end
-        settings.fetch(:libvirt, {}).fetch(:provision, []).each do |p|
+
+        # Note that must add all provisioners using the same logic as vagrant does
+        # not order machine.vm.provision and override.vm.provision according to
+        # order in the Vagrantfile and instead override will always is appended last.
+        [].concat(
+          settings.fetch(:libvirt, {}).fetch(:provision, [])
+        ).concat(
+          settings.fetch(:provision, DEFAULT_PROVISION)
+        ).each do |p|
           override.vm.provision :shell, **p
         end
-      end
 
-      settings.fetch(:provision, DEFAULT_PROVISION).each do |p|
-        machine.vm.provision :shell, **p
+        add_test_provisions(override.vm)
       end
-
-      machine.vm.provider :docker do |domain, override|
-        settings.fetch(:docker, {}).fetch(:post_install, []).each do |p|
-          override.vm.provision :shell, **p
-        end
-      end
-
-      add_test_provisions(machine.vm)
     end
   end
 end

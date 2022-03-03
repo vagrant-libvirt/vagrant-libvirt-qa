@@ -42,7 +42,6 @@ BOXES = {
       :box => "generic/debian10",
       :provision => [
         {:inline => 'sed -i -e "/^dns-nameserver/g" /etc/network/interfaces', :reboot => true},
-        {:inline => 'ln -sf ../run/systemd/resolve/resolv.conf /etc/resolv.conf'},
         # restarting dnsmasq can require a retry after everything else to come up correctly.
         {:inline => 'apt update && apt install -y dnsmasq && systemctl restart dnsmasq', :env => APT_ENV_VARS},
       ],
