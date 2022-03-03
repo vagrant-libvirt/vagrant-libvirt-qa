@@ -64,6 +64,7 @@ Vagrant.configure(2) do |config|
       end
 
       machine.vm.provider :libvirt do |domain, override|
+        override.vm.boot_timeout = 600
         override.vm.box = settings[:libvirt][:box]
         domain.driver = ENV.fetch('VAGRANT_LIBVIRT_DRIVER', 'kvm')
         domain.memory = 4096
