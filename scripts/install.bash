@@ -192,11 +192,13 @@ function install_rake_arch() {
 
 function install_rake_centos() {
     sudo yum -y install \
+        rubygem-bundler \
         rubygem-rake
 }
 
 function install_rake_debian() {
     sudo apt install -y \
+        bundler \
         rake
 }
 
