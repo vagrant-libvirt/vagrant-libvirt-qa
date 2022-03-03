@@ -41,9 +41,9 @@ BOXES = {
     :libvirt => {
       :box => "generic/debian10",
       :provision => [
-        {:inline => 'sed -i -e "/^dns-nameserver/g" /etc/network/interfaces', :reboot => true},
+        {:name => 'disable dns-nameservers', :inline => 'sed -i -e "/^dns-nameserver/g" /etc/network/interfaces', :reboot => true},
         # restarting dnsmasq can require a retry after everything else to come up correctly.
-        {:inline => 'apt update && apt install -y dnsmasq && systemctl restart dnsmasq', :env => APT_ENV_VARS},
+        {:name => 'install dnsmasq', :inline => 'apt update && apt install -y dnsmasq && systemctl restart dnsmasq', :env => APT_ENV_VARS},
       ],
     },
   },
@@ -81,10 +81,10 @@ BOXES = {
 }
 
 DEFAULT_PROVISION = [
-  {:privileged => false, :path => './scripts/install.bash', :args => QA_VAGRANT_VERSION, :env => INSTALL_ENV_VARS},
-  {:reset => true, :inline => 'usermod -a -G libvirt vagrant'},
-  {:privileged => false, :inline => 'virsh --connect qemu:///system capabilities'},
-  {:privileged => false, :inline => 'virsh uri'},
+  {:name => 'install script', :privileged => false, :path => './scripts/install.bash', :args => QA_VAGRANT_VERSION, :env => INSTALL_ENV_VARS},
+  {:name => 'setup group', :reset => true, :inline => 'usermod -a -G libvirt vagrant'},
+  {:name => 'debug system capabilities', :privileged => false, :inline => 'virsh --connect qemu:///system capabilities'},
+  {:name => 'debug uri', :privileged => false, :inline => 'virsh uri'},
 ]
 
 if __FILE__ == $0
