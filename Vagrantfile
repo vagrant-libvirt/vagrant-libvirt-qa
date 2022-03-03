@@ -70,9 +70,7 @@ Vagrant.configure(2) do |config|
         domain.cpus = 2
         domain.nested = true
         domain.disk_driver :io => 'threads', :cache => 'unsafe'
-        if ENV.fetch('VAGRANT_LIBVIRT_DRIVER', 'kvm') == 'qemu'
-          domain.fog_timeout = 10
-        end
+        domain.qemu_use_agent = true
 
         # Note that must add all provisioners using the same logic as vagrant does
         # not order machine.vm.provision and override.vm.provision according to
