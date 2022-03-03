@@ -4,7 +4,7 @@
 ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
 
 Vagrant.configure(2) do |config|
-  config.vm.boot_timeout = 600
+  config.vm.boot_timeout = 1200
   config.vm.define "tiny" do |v|
     v.vm.box = "infernix/tinycore"
     v.vm.synced_folder ".", "/vagrant", disabled: true
