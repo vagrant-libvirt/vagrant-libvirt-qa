@@ -50,17 +50,11 @@ BOXES = {
   'centos-7' => {
     :libvirt => {
       :box => "generic/centos7",
-      :provision => [
-        {:inline => 'ln -sf ../run/systemd/resolve/resolv.conf /etc/resolv.conf'},
-      ],
     },
   },
   'centos-8' => {
     :libvirt => {
       :box => "generic/centos8",
-      :provision => [
-        {:inline => 'ln -sf ../run/systemd/resolve/resolv.conf /etc/resolv.conf'},
-      ],
     },
   },
   'fedora-33' => {
