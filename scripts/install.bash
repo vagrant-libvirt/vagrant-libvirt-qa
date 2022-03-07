@@ -382,6 +382,8 @@ then
     exit 2
 fi
 
+eval set -- "$PARSED"
+
 VAGRANT_ONLY=0
 
 while true; do
