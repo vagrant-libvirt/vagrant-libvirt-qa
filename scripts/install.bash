@@ -187,6 +187,7 @@ function download_vagrant() {
 
 function install_rake_arch() {
     sudo pacman -S --needed --noprogressbar --noconfirm  \
+        bundler \
         rake
 }
 
