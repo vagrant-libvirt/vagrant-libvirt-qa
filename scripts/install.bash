@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eu -o pipefail
+set -o errexit -o pipefail -o noclobber -o nounset
 
 DPKG_OPTS=(
     -o Dpkg::Options::="--force-confold"
@@ -370,16 +370,60 @@ function install_vagrant_libvirt() {
     fi
 }
 
+
+OPTIONS=o
+LONGOPTS=vagrant-only,vagrant-version:
+
+# -pass arguments only via   -- "$@"   to separate them correctly
+! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
+if [[ ${PIPESTATUS[0]} -ne 0 ]]
+then
+    echo "Invalid options provided"
+    exit 2
+fi
+
+VAGRANT_ONLY=0
+
+while true; do
+    case "$1" in
+        -o|--vagrant-only)
+            VAGRANT_ONLY=1
+            shift
+            ;;
+        --vagrant-version)
+            VAGRANT_VERSION=$2
+            shift 2
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            echo "Programming error"
+            exit 3
+            ;;
+    esac
+done
+
+if [[ -z ${VAGRANT_VERSION+x} ]]
+then
+    if [[ $# -ne 1 ]]
+        echo "$0: must specify the version of vagrant to install."
+        exit 4
+    fi
+
+    VAGRANT_VERSION=$1
+fi
+
 echo "Starting vagrant-libvirt installation script"
 
-VAGRANT_VERSION=$1
 DISTRO=${DISTRO:-$(awk -F= '/^ID=/{print $2}' /etc/os-release | tr -d '"' | tr '[A-Z]' '[a-z]')}
 DISTRO_VERSION=${DISTRO_VERSION:-$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | tr -d '"' | tr '[A-Z]' '[a-z]' | tr -d '.')}
 
-setup_distro ${DISTRO} ${DISTRO_VERSION}
+[[ ${VAGRANT_ONLY} -eq 0 ]] && setup_distro ${DISTRO} ${DISTRO_VERSION}
 
 install_vagrant ${VAGRANT_VERSION} ${DISTRO} ${DISTRO_VERSION}
 
-install_vagrant_libvirt ${DISTRO}
+[[ ${VAGRANT_ONLY} -eq 0 ]] && install_vagrant_libvirt ${DISTRO}
 
 echo "Finished vagrant-libvirt installation script"

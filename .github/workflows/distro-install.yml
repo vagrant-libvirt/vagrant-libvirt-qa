@@ -20,7 +20,7 @@ jobs:
     needs: generate-matrix
     runs-on: ubuntu-20.04
     env:
-      VAGRANT_DEFAULT_PROVIDER: libvirt
+      VAGRANT_DEFAULT_PROVIDER: docker
       VAGRANT_LIBVIRT_DRIVER: qemu
     strategy:
       fail-fast: false
@@ -40,13 +40,13 @@ jobs:
         echo "QA_VAGRANT_LIBVIRT_VERSION=git-$(git submodule status -- vagrant-libvirt | cut -d' ' -f2)" >> ${GITHUB_ENV}
     - name: Set up libvirt
       run: |
-        VAGRANT_LIBVIRT_VERSION=${QA_VAGRANT_LIBVIRT_VERSION} ./scripts/install.bash 2.2.19
+        ./scripts/install.bash --vagrant-only -- 2.2.19
+        #VAGRANT_LIBVIRT_VERSION=${QA_VAGRANT_LIBVIRT_VERSION} ./scripts/install.bash 2.2.19
 
-        # start daemon
-        sudo systemctl start libvirtd
+        #sudo systemctl start libvirtd
 
         # add user to group
-        sudo usermod -a -G libvirt $USER
+        #sudo usermod -a -G libvirt $USER
     - uses: actions/cache@v2
       with:
         path: ~/.vagrant.d/boxes
@@ -55,13 +55,15 @@ jobs:
           ${{ runner.os }}-
     - name: launch target distro
       run: |
+        vagrant up --no-provision ${{ matrix.test_name }}
         # run under libvirt group
-        sg libvirt -c "vagrant up --no-provision ${{ matrix.test_name }}"
+        #sg libvirt -c "vagrant up --no-provision ${{ matrix.test_name }}"
 
     - name: test vagrant-libvirt in target distro
       run: |
+        vagrant provision ${{ matrix.test_name }}
         # run under libvirt group
-        sg libvirt -c "vagrant provision ${{ matrix.test_name }}"
+        #sg libvirt -c "vagrant provision ${{ matrix.test_name }}"
 
   finish:
     needs: verify-install
