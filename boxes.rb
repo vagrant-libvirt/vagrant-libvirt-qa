@@ -76,7 +76,7 @@ BOXES = {
 
 DEFAULT_PROVISION = [
   {:name => 'install script', :privileged => false, :path => './scripts/install.bash', :args => "--vagrant-version #{QA_VAGRANT_VERSION}", :env => INSTALL_ENV_VARS},
-  #{:name => 'setup group', :reset => true, :inline => 'usermod -a -G libvirt vagrant'},
+  {:name => 'setup group', :reset => true, :inline => 'usermod -a -G libvirt vagrant'},
   {:name => 'debug system capabilities', :privileged => false, :inline => 'virsh --connect qemu:///system capabilities'},
   {:name => 'debug uri', :privileged => false, :inline => 'virsh uri'},
 ]
