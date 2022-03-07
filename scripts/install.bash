@@ -408,6 +408,7 @@ done
 if [[ -z ${VAGRANT_VERSION+x} ]]
 then
     if [[ $# -ne 1 ]]
+    then
         echo "$0: must specify the version of vagrant to install."
         exit 4
     fi
