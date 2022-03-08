@@ -6,6 +6,7 @@ RUN sed -i -e 's/mirrorlist/#mirrorlist/g' -e 's|#baseurl=http://mirror.centos.o
 
 RUN dnf update -y && \
     dnf install -y \
+        kmod \
         openssh-clients \
         openssh-server \
         sudo \

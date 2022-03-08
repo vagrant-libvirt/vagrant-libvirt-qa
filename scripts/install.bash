@@ -71,7 +71,7 @@ function setup_centos_7() {
         ruby-devel \
         wget \
         ;
-    sudo systemctl restart libvirtd
+    restart_libvirt
 }
 
 function setup_centos() {
@@ -96,7 +96,7 @@ function setup_centos() {
         wget \
         zlib-devel \
         ;
-    sudo systemctl restart libvirtd
+    restart_libvirt
 }
 
 function setup_debian() {
@@ -113,7 +113,7 @@ function setup_debian() {
         qemu-utils \
         wget \
         ;
-    sudo systemctl restart libvirtd
+    restart_libvirt
 }
 
 function setup_fedora() {
@@ -134,7 +134,7 @@ function setup_fedora() {
         wget \
         zlib-devel \
         ;
-    sudo systemctl restart libvirtd
+    restart_libvirt
 }
 
 function setup_ubuntu_1804() {

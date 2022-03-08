@@ -4,6 +4,7 @@ SHELL ["/bin/bash", "-c"]
 
 RUN apt update \
     && apt install -y \
+        kmod \
         openssh-server \
         openssh-client \
         systemd \

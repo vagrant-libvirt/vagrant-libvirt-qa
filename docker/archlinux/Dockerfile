@@ -4,6 +4,7 @@ SHELL ["/bin/bash", "-c"]
 
 RUN pacman -Sy --noconfirm --noprogressbar \
     && pacman -S --needed --noprogressbar --noconfirm \
+        kmod \
         polkit \
         openssh \
         systemd \
