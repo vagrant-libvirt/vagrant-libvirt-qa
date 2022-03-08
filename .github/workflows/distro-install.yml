@@ -1,0 +1,64 @@
+name: Distribution Install
+
+on:
+  pull_request:
+
+jobs:
+  generate-matrix:
+    runs-on: ubuntu-20.04
+    outputs:
+      matrix: ${{ steps.generate-matrix.outputs.matrix }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Generate matrix
+      id: generate-matrix
+      run: |
+        tests="$(ruby boxes.rb | jq -c -r '. | keys')"
+        echo "::set-output name=matrix::${tests}"
+
+  verify-install:
+    needs: generate-matrix
+    runs-on: ubuntu-20.04
+    env:
+      VAGRANT_DEFAULT_PROVIDER: docker
+      VAGRANT_LIBVIRT_DRIVER: qemu
+    strategy:
+      fail-fast: false
+      matrix:
+        test_name: ${{ fromJSON(needs.generate-matrix.outputs.matrix) }}
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: recursive
+    - name: Disable apparmor to allow containers use alternative paths
+      run: |
+        sudo systemctl stop apparmor
+    - name: Set up version to test
+      run: |
+        echo "QA_VAGRANT_LIBVIRT_VERSION=git-$(git submodule status -- vagrant-libvirt | cut -d' ' -f2)" >> ${GITHUB_ENV}
+    - name: Set up libvirt
+      run: |
+        ./scripts/install.bash --vagrant-only -- 2.2.19
+    - uses: actions/cache@v2
+      with:
+        path: ~/.vagrant.d/boxes
+        key: ${{ runner.os }}-${{ matrix.test_name }}
+        restore-keys: |
+          ${{ runner.os }}-
+    - name: launch target distro
+      run: |
+        vagrant up --no-provision ${{ matrix.test_name }}
+
+    - name: test vagrant-libvirt in target distro
+      run: |
+        vagrant provision ${{ matrix.test_name }}
+
+  finish:
+    needs: verify-install
+    runs-on: ubuntu-latest
+    steps:
+    - name: Matrix finished
+      run: |
+        echo "success"

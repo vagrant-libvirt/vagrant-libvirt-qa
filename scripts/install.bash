@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eu -o pipefail
+set -o errexit -o pipefail -o noclobber -o nounset
 
 DPKG_OPTS=(
     -o Dpkg::Options::="--force-confold"
@@ -28,7 +28,7 @@ function setup_apt() {
 
 function setup_arch() {
     sudo pacman -Suyu --noconfirm --noprogressbar
-    sudo pacman -Rd --nodeps --noconfirm iptables
+    sudo pacman -Qs 'iptables' | grep "local" | grep "iptables " && sudo pacman -Rd --nodeps --noconfirm iptables
     # need to remove iptables to allow ebtables to be installed
     sudo pacman -S --needed --noprogressbar --noconfirm  \
         autoconf \
@@ -53,6 +53,8 @@ function setup_arch() {
 
 function setup_centos_7() {
     sudo yum -y update
+    sudo yum -y install centos-release-qemu-ev
+    sudo yum -y update
     sudo yum -y install \
         autoconf \
         automake \
@@ -65,11 +67,11 @@ function setup_centos_7() {
         libvirt-devel \
         make \
         qemu \
-        qemu-kvm \
+        qemu-kvm-ev \
         ruby-devel \
         wget \
         ;
-    sudo systemctl restart libvirtd
+    restart_libvirt
 }
 
 function setup_centos() {
@@ -84,13 +86,17 @@ function setup_centos() {
         gcc \
         gcc-c++ \
         git \
+        libguestfs-tools \
+        libvirt \
+        libvirt-devel \
         make \
+        qemu-kvm \
         rpm-build \
         ruby-devel \
         wget \
         zlib-devel \
         ;
-    sudo systemctl restart libvirtd
+    restart_libvirt
 }
 
 function setup_debian() {
@@ -107,27 +113,28 @@ function setup_debian() {
         qemu-utils \
         wget \
         ;
+    restart_libvirt
 }
 
 function setup_fedora() {
     sudo dnf -y update
     sudo dnf -y install \
+        @virtualization \
         autoconf \
         automake \
         binutils \
+        byacc \
         cmake \
         gcc \
+        gcc-c++ \
         git \
         libguestfs-tools \
-        libvirt \
-        libvirt-daemon-driver-qemu \
         libvirt-devel \
         make \
-        qemu-kvm \
-        ruby-devel \
         wget \
+        zlib-devel \
         ;
-    sudo systemctl restart libvirtd
+    restart_libvirt
 }
 
 function setup_ubuntu_1804() {
@@ -153,6 +160,7 @@ function setup_ubuntu() {
         qemu-utils \
         wget \
         ;
+    restart_libvirt
 }
 
 function setup_distro() {
@@ -175,6 +183,33 @@ function download_vagrant() {
 
     wget --no-verbose https://releases.hashicorp.com/vagrant/${version}/${pkg} -O /tmp/${pkg}.tmp
     mv /tmp/${pkg}.tmp /tmp/${pkg}
+}
+
+function install_rake_arch() {
+    sudo pacman -S --needed --noprogressbar --noconfirm  \
+        ruby-bundler \
+        rake
+}
+
+function install_rake_centos() {
+    sudo yum -y install \
+        rubygem-bundler \
+        rubygem-rake
+}
+
+function install_rake_debian() {
+    sudo apt install -y \
+        bundler \
+        rake
+}
+
+function install_rake_fedora() {
+    sudo dnf -y install \
+        rubygem-rake
+}
+
+function install_rake_ubuntu() {
+    install_rake_debian $@
 }
 
 function install_vagrant_arch() {
@@ -209,7 +244,7 @@ function build_libssh() {
 
     mkdir -p ${dir}-build
     pushd ${dir}-build
-    cmake ../${dir} -DOPENSSL_ROOT_DIR=/opt/vagrant/embedded/
+    cmake ${dir} -DOPENSSL_ROOT_DIR=/opt/vagrant/embedded/
     make
     sudo cp lib/libssh* /opt/vagrant/embedded/lib64
     popd
@@ -231,15 +266,17 @@ function setup_rpm_sources_centos() {
     rpmname="${3:-${pkg}}"
 
     [[ ! -d ${pkg} ]] && git clone https://git.centos.org/rpms/${pkg}
-    cd ${pkg}
+    pushd ${pkg}
     nvr=$(rpm -q --queryformat "${pkg}-%{version}-%{release}" ${rpmname})
     nv=$(rpm -q --queryformat "${pkg}-%{version}" ${rpmname})
     git checkout $(git tag -l | grep "${nvr}\$" | tail -n1)
     into_srpm.sh -d c8s
-    cd BUILD
+    pushd BUILD
     tar xf ../SOURCES/${nv}.tar.*z
 
-    basedir=${nv}
+    basedir=$(realpath ${nv})
+    popd
+    popd
 }
 
 function patch_vagrant_centos_8() {
@@ -265,14 +302,15 @@ function setup_rpm_sources_fedora() {
     nvr=$(rpm -q --queryformat "${pkg}-%{version}-%{release}" ${rpmname})
     nv=$(rpm -q --queryformat "${pkg}-%{version}" ${rpmname})
     mkdir -p ${pkg}
-    cd ${pkg}
+    pushd ${pkg}
 
     [[ ! -e ${nvr}.src.rpm ]] && dnf download --source ${rpmname}
     rpm2cpio ${nvr}.src.rpm | cpio -imdV
     rm -rf ${nv}
     tar xf ${nv}.tar.*z
 
-    basedir=${nv}
+    basedir=$(realpath ${nv})
+    popd
 }
 
 function patch_vagrant_fedora() {
@@ -309,16 +347,22 @@ function install_vagrant() {
 }
 
 function install_vagrant_libvirt() {
-    if [[ "${VAGRANT_LIBVIRT_VERSION}" == "master" ]]
+    local distro=${1}
+
+    echo "Testing vagrant-libvirt version: '${VAGRANT_LIBVIRT_VERSION}'"
+    if [[ "${VAGRANT_LIBVIRT_VERSION:0:4}" == "git-" ]]
     then
-        rm -rf build
-        mkdir build
-        git clone https://github.com/vagrant-libvirt/vagrant-libvirt.git
-        cd vagrant-libvirt
-        bundle install
-        bundle exec rake build
+        eval install_rake_${distro}
+        if [[ ! -d "./vagrant-libvirt" ]]
+        then
+            git clone https://github.com/vagrant-libvirt/vagrant-libvirt.git
+        fi
+        pushd vagrant-libvirt
+        git checkout ${VAGRANT_LIBVIRT_VERSION#git-}
+        rm -rf ./pkg
+        rake build
         vagrant plugin install ./pkg/vagrant-libvirt-*.gem
-        cd -
+        popd
     elif [[ "${VAGRANT_LIBVIRT_VERSION}" == "latest" ]]
     then
         vagrant plugin install vagrant-libvirt
@@ -328,12 +372,62 @@ function install_vagrant_libvirt() {
 }
 
 
-VAGRANT_VERSION=$1
+OPTIONS=o
+LONGOPTS=vagrant-only,vagrant-version:
+
+# -pass arguments only via   -- "$@"   to separate them correctly
+! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
+if [[ ${PIPESTATUS[0]} -ne 0 ]]
+then
+    echo "Invalid options provided"
+    exit 2
+fi
+
+eval set -- "$PARSED"
+
+VAGRANT_ONLY=0
+
+while true; do
+    case "$1" in
+        -o|--vagrant-only)
+            VAGRANT_ONLY=1
+            shift
+            ;;
+        --vagrant-version)
+            VAGRANT_VERSION=$2
+            shift 2
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            echo "Programming error"
+            exit 3
+            ;;
+    esac
+done
+
+if [[ -z ${VAGRANT_VERSION+x} ]]
+then
+    if [[ $# -ne 1 ]]
+    then
+        echo "$0: must specify the version of vagrant to install."
+        exit 4
+    fi
+
+    VAGRANT_VERSION=$1
+fi
+
+echo "Starting vagrant-libvirt installation script"
+
 DISTRO=${DISTRO:-$(awk -F= '/^ID=/{print $2}' /etc/os-release | tr -d '"' | tr '[A-Z]' '[a-z]')}
 DISTRO_VERSION=${DISTRO_VERSION:-$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | tr -d '"' | tr '[A-Z]' '[a-z]' | tr -d '.')}
 
-setup_distro ${DISTRO} ${DISTRO_VERSION}
+[[ ${VAGRANT_ONLY} -eq 0 ]] && setup_distro ${DISTRO} ${DISTRO_VERSION}
 
 install_vagrant ${VAGRANT_VERSION} ${DISTRO} ${DISTRO_VERSION}
 
-install_vagrant_libvirt
+[[ ${VAGRANT_ONLY} -eq 0 ]] && install_vagrant_libvirt ${DISTRO}
+
+echo "Finished vagrant-libvirt installation script"
