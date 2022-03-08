@@ -17,7 +17,7 @@ def add_test_provisions(vm)
   end
   # Testing nested VM provisioning via nested kvm
   vm.provision :file, :source => './Vagrantfile.test', :destination => '~/Vagrantfile'
-  vm.provision :shell, :privileged => false, :inline => <<-EOC
+  vm.provision :shell, :privileged => false, env => {'VAGRANT_LOG': 'debug'} ,:inline => <<-EOC
     set -e
     vagrant destroy -f
     vagrant up --provider=libvirt
