@@ -2,8 +2,6 @@ FROM centos:7
 
 SHELL ["/bin/bash", "-c"]
 
-#RUN sed -i -e 's/mirrorlist/#mirrorlist/g' -e 's|#baseurl=http://mirror.centos.org|baseurl=https://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
-
 RUN yum update -y && \
     yum install -y \
         kmod \
