@@ -7,7 +7,7 @@ RUN yes | unminimize
 
 RUN apt update \
     && apt install -y \
-        apparmor \
+        kmod \
         openssh-server \
         openssh-client \
         systemd \

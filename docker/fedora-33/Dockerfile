@@ -4,6 +4,7 @@ SHELL ["/bin/bash", "-c"]
 
 RUN dnf update -y && \
     dnf install -y \
+        kmod \
         openssh-clients \
         openssh-server \
         sudo \

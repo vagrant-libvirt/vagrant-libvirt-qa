@@ -6,6 +6,7 @@ SHELL ["/bin/bash", "-c"]
 
 RUN yum update -y && \
     yum install -y \
+        kmod \
         openssh-clients \
         openssh-server \
         sudo \
