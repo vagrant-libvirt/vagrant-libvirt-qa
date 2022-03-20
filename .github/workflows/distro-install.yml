@@ -9,7 +9,7 @@ jobs:
     outputs:
       matrix: ${{ steps.generate-matrix.outputs.matrix }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Generate matrix
       id: generate-matrix
       run: |
@@ -28,7 +28,7 @@ jobs:
         test_name: ${{ fromJSON(needs.generate-matrix.outputs.matrix) }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
         submodules: recursive
