@@ -41,7 +41,7 @@ jobs:
     - name: Set up libvirt
       run: |
         ./scripts/install.bash --vagrant-only -- 2.2.19
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3.0.1
       with:
         path: ~/.vagrant.d/boxes
         key: ${{ runner.os }}-${{ matrix.test_name }}
