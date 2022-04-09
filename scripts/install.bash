@@ -284,6 +284,7 @@ function patch_vagrant_centos_8() {
     pushd patches
     [[ ! -d centos-git-common ]] && git clone https://git.centos.org/centos-git-common
     export PATH=$(readlink -f ./centos-git-common):$PATH
+    chmod a+x ./centos-git-common/*.sh
 
     setup_rpm_sources_centos LIBSSH_DIR libssh
     build_libssh ${LIBSSH_DIR}
