@@ -35,6 +35,9 @@ BOXES = {
   'ubuntu-20.04' => {
     :libvirt => {
       :box => "generic/ubuntu2004",
+      :provision => [
+        {:inline => 'ln -sf ../run/systemd/resolve/resolv.conf /etc/resolv.conf'},
+      ],
     },
   },
   'debian-10' => {

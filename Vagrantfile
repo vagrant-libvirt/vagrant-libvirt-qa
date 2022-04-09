@@ -56,7 +56,7 @@ Vagrant.configure(2) do |config|
         [].concat(
           settings.fetch(:docker, {}).fetch(:provision, [])
         ).concat(
-          settings.fetch(:provision, DEFAULT_PROVISION)
+          ENV.fetch('VAGRANT_LIBVIRT_DEPLOY', 'true') == 'true' ? settings.fetch(:provision, DEFAULT_PROVISION) : []
         ).concat(
           settings.fetch(:docker, {}).fetch(:post_install, [])
         ).each do |p|
@@ -80,12 +80,12 @@ Vagrant.configure(2) do |config|
         [].concat(
           settings.fetch(:libvirt, {}).fetch(:provision, [])
         ).concat(
-          settings.fetch(:provision, DEFAULT_PROVISION)
+          ENV.fetch('VAGRANT_LIBVIRT_DEPLOY', 'true') == 'true' ? settings.fetch(:provision, DEFAULT_PROVISION) : []
         ).each do |p|
           override.vm.provision :shell, **p
         end
 
-        add_test_provisions(override.vm)
+        add_test_provisions(override.vm) if ENV.fetch('VAGRANT_LIBVIRT_DEPLOY', 'true') == 'true'
       end
     end
   end
