@@ -70,6 +70,11 @@ BOXES = {
       :box => "generic/fedora34",
     },
   },
+  'fedora-35' => {
+    :libvirt => {
+      :box => "generic/fedora35",
+    },
+  },
   'archlinux' => {
     :libvirt => {
       :box => "archlinux/archlinux",
