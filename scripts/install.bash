@@ -47,6 +47,7 @@ function setup_arch() {
         pkg-config \
         qemu \
         ruby \
+        wget \
         ;
     sudo systemctl enable --now libvirtd
 }
