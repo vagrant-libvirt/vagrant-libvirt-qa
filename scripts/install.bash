@@ -412,7 +412,7 @@ done
 if [[ -z ${VAGRANT_VERSION+x} ]]
 then
     VAGRANT_VERSION="$(
-        curl -sSLf https://checkpoint-api.hashicorp.com/v1/check/vagrant | \
+        wget -qO - https://checkpoint-api.hashicorp.com/v1/check/vagrant 2>/dev/null | \
             tr ',' '\n' | grep current_version | cut -d: -f2 | tr -d '"'
         )"
     echo "Installing vagrant version '${VAGRANT_VERSION}'"
