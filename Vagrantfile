@@ -7,7 +7,7 @@ require_relative './boxes.rb'
 
 def add_test_provisions(vm)
   # Workarond for Vagrant bug
-  if Gem::Version.new(QA_VAGRANT_VERSION) < Gem::Version.new('1.9.1')
+  if Gem::Version.new(Vagrant::VERSION) < Gem::Version.new('1.9.1')
     vm.provision :shell, :inline => <<-EOC
     for i in /opt/vagrant/embedded/gems/gems/vagrant-*/plugins/guests/tinycore/guest.rb
     do
