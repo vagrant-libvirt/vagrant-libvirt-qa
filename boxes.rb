@@ -1,18 +1,5 @@
 #!/usr/bin/ruby
 #
-# Allow for passing test versions with env vars
-if ENV['QA_VAGRANT_VERSION'].nil? || ENV['QA_VAGRANT_VERSION'] == "latest"
-  # If not specified, fetch the latest version using built-in 'version' plugin
-  #
-  # NOTE: we 'cd /tmp' to avoid invoking Vagrant against this very Vagrantfile but
-  # that may not always work. There is probably a better way by leveraging
-  # VagrantPlugins::CommandVersion::Command and using 'version-latest'
-  # 
-  latest = `cd /tmp; vagrant version | grep Latest | awk '{ print $3 }'`
-  QA_VAGRANT_VERSION = latest.strip
-else
-  QA_VAGRANT_VERSION = ENV['QA_VAGRANT_VERSION']
-end
 
 APT_ENV_VARS = {
   'DEBIAN_FRONTEND': 'noninteractive',
@@ -83,7 +70,7 @@ BOXES = {
 }
 
 DEFAULT_PROVISION = [
-  {:name => 'install script', :privileged => false, :path => './scripts/install.bash', :args => "--vagrant-version #{QA_VAGRANT_VERSION}", :env => INSTALL_ENV_VARS},
+  {:name => 'install script', :privileged => false, :path => './scripts/install.bash', :args => ENV['QA_VAGRANT_VERSION'].nil? ? "" : "--vagrant-version #{ENV['QA_VAGRANT_VERSION']}", :env => INSTALL_ENV_VARS},
   {:name => 'setup group', :reset => true, :inline => 'usermod -a -G libvirt vagrant'},
   {:name => 'debug system capabilities', :privileged => false, :inline => 'virsh --connect qemu:///system capabilities'},
   {:name => 'debug uri', :privileged => false, :inline => 'virsh uri'},

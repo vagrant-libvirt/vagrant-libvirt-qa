@@ -40,7 +40,7 @@ jobs:
         echo "QA_VAGRANT_LIBVIRT_VERSION=git-$(git submodule status -- vagrant-libvirt | cut -d' ' -f2)" >> ${GITHUB_ENV}
     - name: Set up libvirt
       run: |
-        ./scripts/install.bash --vagrant-only -- 2.2.19
+        ./scripts/install.bash --vagrant-only
     - uses: actions/cache@v3.0.4
       with:
         path: ~/.vagrant.d/boxes

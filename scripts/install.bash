@@ -47,6 +47,7 @@ function setup_arch() {
         pkg-config \
         qemu \
         ruby \
+        wget \
         ;
     sudo systemctl enable --now libvirtd
 }
@@ -332,6 +333,8 @@ function install_vagrant() {
     local distro=${2}
     local distro_version=${3:-}
 
+    echo "Installing vagrant version '${version}'"
+
     eval install_vagrant_${distro} ${version}
 
     if [[ -n "${distro_version}" ]] && [[ $(type -t patch_vagrant_${distro}_${distro_version} 2>/dev/null) == 'function' ]]
@@ -409,23 +412,20 @@ while true; do
     esac
 done
 
-if [[ -z ${VAGRANT_VERSION+x} ]]
-then
-    if [[ $# -ne 1 ]]
-    then
-        echo "$0: must specify the version of vagrant to install."
-        exit 4
-    fi
-
-    VAGRANT_VERSION=$1
-fi
-
 echo "Starting vagrant-libvirt installation script"
 
 DISTRO=${DISTRO:-$(awk -F= '/^ID=/{print $2}' /etc/os-release | tr -d '"' | tr '[A-Z]' '[a-z]')}
 DISTRO_VERSION=${DISTRO_VERSION:-$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | tr -d '"' | tr '[A-Z]' '[a-z]' | tr -d '.')}
 
 [[ ${VAGRANT_ONLY} -eq 0 ]] && setup_distro ${DISTRO} ${DISTRO_VERSION}
+
+if [[ -z ${VAGRANT_VERSION+x} ]]
+then
+    VAGRANT_VERSION="$(
+        wget -qO - https://checkpoint-api.hashicorp.com/v1/check/vagrant 2>/dev/null | \
+            tr ',' '\n' | grep current_version | cut -d: -f2 | tr -d '"'
+        )"
+fi
 
 install_vagrant ${VAGRANT_VERSION} ${DISTRO} ${DISTRO_VERSION}
 
