@@ -411,13 +411,11 @@ done
 
 if [[ -z ${VAGRANT_VERSION+x} ]]
 then
-    if [[ $# -ne 1 ]]
-    then
-        echo "$0: must specify the version of vagrant to install."
-        exit 4
-    fi
-
-    VAGRANT_VERSION=$1
+    VAGRANT_VERSION="$(
+        curl -sSLf https://checkpoint-api.hashicorp.com/v1/check/vagrant | \
+            tr ',' '\n' | grep current_version | cut -d: -f2 | tr -d '"'
+        )"
+    echo "Installing vagrant version '${VAGRANT_VERSION}'"
 fi
 
 echo "Starting vagrant-libvirt installation script"
