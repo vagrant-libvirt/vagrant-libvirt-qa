@@ -7,6 +7,28 @@ DPKG_OPTS=(
 )
 VAGRANT_LIBVIRT_VERSION=${VAGRANT_LIBVIRT_VERSION:-"latest"}
 
+function version_compare() {
+    [[ $1 == $2 ]] && return 0
+
+    local IFS=.
+    local v1=(${1})
+    local v2=(${2})
+    local i
+
+    for (( i=0; i<${#v1[@]} || i<${#v2[@]}; i++ ))
+    do
+        if [[ ${v1[i]:-0} -gt ${v2[i]:-0} ]]
+        then
+            return 1
+        elif [[ ${v1[i]:-0} -lt ${v2[i]:-0} ]]
+        then
+            return 2
+        fi
+    done
+
+    return 0
+}
+
 function restart_libvirt() {
     service_name=${1:-libvirtd}
     # it appears there can be issues with libvirt being started before certain
@@ -180,10 +202,35 @@ function setup_distro() {
 function download_vagrant() {
     local version=${1}
     local pkgext=${2}
-    local pkg="vagrant_${1}_x86_64.${pkgext}"
+    local pkgversion=${version}
+    local arch="x86_64"
+    # package name format for releases < 2.3.0
+    local pkg="vagrant_${pkgversion}_${arch}.${pkgext}"
+
+    local version_comparison=0
+    version_compare ${version} "2.3.0" || version_comparison=$?
+
+    # for version 2.3.0 (and newer?) the package version is different
+    # and debs now use the amd64 arch.
+    if [[ ${version_comparison} -le 1 ]]
+    then
+        # for rpm, deb, and zst the version number now appends '-1'
+        pkgversion="${version}-1"
+        if [[ "${pkgext}" == "rpm" ]]
+        then
+            pkg="vagrant-${pkgversion}.${arch}.${pkgext}"
+        elif [[ "${pkgext}" == "deb" ]]
+        then
+            arch="amd64"
+            pkg="vagrant_${pkgversion}_${arch}.${pkgext}"
+        fi
+    fi
+
 
     wget --no-verbose https://releases.hashicorp.com/vagrant/${version}/${pkg} -O /tmp/${pkg}.tmp
     mv /tmp/${pkg}.tmp /tmp/${pkg}
+
+    DOWNLOADED_VAGRANT_PKG=${pkg}
 }
 
 function install_rake_arch() {
@@ -222,14 +269,14 @@ function install_vagrant_centos() {
     local version=$1
 
     download_vagrant ${version} rpm
-    sudo -E rpm -Uh --force /tmp/vagrant_${version}_x86_64.rpm
+    sudo -E rpm -Uh --force /tmp/${DOWNLOADED_VAGRANT_PKG}
 }
 
 function install_vagrant_debian() {
     local version=$1
 
     download_vagrant ${version} deb
-    sudo -E dpkg -i /tmp/vagrant_${version}_x86_64.deb
+    sudo -E dpkg -i /tmp/${DOWNLOADED_VAGRANT_PKG}
 }
 
 function install_vagrant_fedora() {
