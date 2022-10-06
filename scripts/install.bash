@@ -366,11 +366,11 @@ function patch_vagrant_fedora() {
     mkdir -p patches
     pushd patches
 
-    setup_rpm_sources_fedora LIBSSH_DIR libssh
-    build_libssh ${LIBSSH_DIR}
-
     setup_rpm_sources_fedora KRB5_DIR krb5 krb5-libs
     build_krb5 ${KRB5_DIR}
+
+    setup_rpm_sources_fedora LIBSSH_DIR libssh
+    build_libssh ${LIBSSH_DIR}
 
     popd
 }
