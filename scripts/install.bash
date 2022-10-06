@@ -348,8 +348,8 @@ function setup_rpm_sources_fedora() {
     pkg="$2"
     rpmname="${3:-${pkg}}"
 
-    nvr=$(rpm -q --queryformat "${pkg}-%{version}-%{release}" ${rpmname})
-    nv=$(rpm -q --queryformat "${pkg}-%{version}" ${rpmname})
+    nvr=$(rpm -q --queryformat "${pkg}-%{version}-%{release}\n" ${rpmname} | uniq)
+    nv=$(rpm -q --queryformat "${pkg}-%{version}\n" ${rpmname} | uniq)
     mkdir -p ${pkg}
     pushd ${pkg}
 
