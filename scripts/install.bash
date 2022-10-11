@@ -348,8 +348,8 @@ function setup_rpm_sources_fedora() {
     pkg="$2"
     rpmname="${3:-${pkg}}"
 
-    nvr=$(rpm -q --queryformat "${pkg}-%{version}-%{release}" ${rpmname})
-    nv=$(rpm -q --queryformat "${pkg}-%{version}" ${rpmname})
+    nvr=$(rpm -q --queryformat "${pkg}-%{version}-%{release}\n" ${rpmname} | uniq)
+    nv=$(rpm -q --queryformat "${pkg}-%{version}\n" ${rpmname} | uniq)
     mkdir -p ${pkg}
     pushd ${pkg}
 
@@ -366,11 +366,11 @@ function patch_vagrant_fedora() {
     mkdir -p patches
     pushd patches
 
-    setup_rpm_sources_fedora LIBSSH_DIR libssh
-    build_libssh ${LIBSSH_DIR}
-
     setup_rpm_sources_fedora KRB5_DIR krb5 krb5-libs
     build_krb5 ${KRB5_DIR}
+
+    setup_rpm_sources_fedora LIBSSH_DIR libssh
+    build_libssh ${LIBSSH_DIR}
 
     popd
 }
