@@ -97,10 +97,36 @@ function setup_centos_7() {
     restart_libvirt
 }
 
-function setup_centos() {
+function setup_centos_8() {
     sudo dnf -y update
     sudo dnf -y install \
         @virt \
+        autoconf \
+        automake \
+        binutils \
+        byacc \
+        cmake \
+        gcc \
+        gcc-c++ \
+        git \
+        libguestfs-tools \
+        libvirt \
+        libvirt-devel \
+        make \
+        qemu-kvm \
+        rpm-build \
+        ruby-devel \
+        wget \
+        zlib-devel \
+        ;
+    restart_libvirt
+}
+
+function setup_centos() {
+    sudo dnf config-manager --set-enabled crb
+    sudo dnf -y update
+    sudo dnf -y install \
+        @virtualization-host-environment \
         autoconf \
         automake \
         binutils \

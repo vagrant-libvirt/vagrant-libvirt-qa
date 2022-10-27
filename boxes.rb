@@ -47,6 +47,16 @@ BOXES = {
       :box => "generic/centos8",
     },
   },
+  'centos-8-stream' => {
+    :libvirt => {
+      :box => "generic/centos8s",
+    },
+  },
+  'centos-9-stream' => {
+    :libvirt => {
+      :box => "generic/centos9s",
+    },
+  },
   'fedora-33' => {
     :libvirt => {
       :box => "generic/fedora33",
