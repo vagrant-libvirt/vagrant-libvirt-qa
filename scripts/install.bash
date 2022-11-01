@@ -196,6 +196,7 @@ function setup_opensuse-leap() {
         cmake \
         gcc \
         gcc-c++ \
+        git \
         libguestfs \
         libssh4 \
         libvirt \
