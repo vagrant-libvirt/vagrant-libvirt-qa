@@ -186,6 +186,31 @@ function setup_fedora() {
     restart_libvirt
 }
 
+function setup_opensuse-leap() {
+    # perl-XML-XPath is used for getting information from zypper
+    # for package details to download the src.rpm's.
+    sudo zypper modifyrepo --enable repo-source
+    sudo zypper refresh
+    sudo zypper install --no-confirm \
+        byacc \
+        cmake \
+        gcc \
+        gcc-c++ \
+        libguestfs \
+        libssh4 \
+        libvirt \
+        libvirt-devel \
+        make \
+        qemu-kvm \
+        perl-XML-XPath \
+        polkit \
+        ruby-devel \
+        wget \
+        zlib-devel \
+        ;
+    restart_libvirt
+}
+
 function setup_ubuntu_1804() {
     setup_apt
     sudo -E apt-get -y "${DPKG_OPTS[@]}" install \
@@ -282,6 +307,12 @@ function install_rake_fedora() {
         rubygem-rake
 }
 
+function install_rake_opensuse-leap() {
+    sudo zypper install --no-confirm \
+        rubygem-bundler \
+        rubygem-rake
+}
+
 function install_rake_ubuntu() {
     install_rake_debian $@
 }
@@ -307,6 +338,13 @@ function install_vagrant_debian() {
 
 function install_vagrant_fedora() {
     install_vagrant_centos $@
+}
+
+function install_vagrant_opensuse-leap() {
+    local version=$1
+
+    download_vagrant ${version} rpm
+    sudo zypper install --allow-unsigned-rpm --no-confirm /tmp/${DOWNLOADED_VAGRANT_PKG}
 }
 
 function install_vagrant_ubuntu() {
@@ -341,8 +379,8 @@ function setup_rpm_sources_centos() {
 
     [[ ! -d ${pkg} ]] && git clone https://git.centos.org/rpms/${pkg}
     pushd ${pkg}
-    nvr=$(rpm -q --queryformat "${pkg}-%{version}-%{release}" ${rpmname})
-    nv=$(rpm -q --queryformat "${pkg}-%{version}" ${rpmname})
+    nvr=$(rpm -q --queryformat "${pkg}-%{version}-%{release}" ${rpmname} | uniq)
+    nv=$(rpm -q --queryformat "${pkg}-%{version}" ${rpmname} | uniq)
     git checkout $(git tag -l | grep "${nvr}\$" | tail -n1)
     into_srpm.sh -d c8s
     pushd BUILD
@@ -396,6 +434,42 @@ function patch_vagrant_fedora() {
     build_krb5 ${KRB5_DIR}
 
     setup_rpm_sources_fedora LIBSSH_DIR libssh
+    build_libssh ${LIBSSH_DIR}
+
+    popd
+}
+
+function setup_rpm_sources_opensuse-leap() {
+    typeset -n basedir=$1
+    pkg="$2"
+    rpmname="${3:-${pkg}}"
+
+    nvr=$(rpm -q --queryformat "${pkg}-%{version}-%{release}\n" ${rpmname} | uniq)
+    nv=$(rpm -q --queryformat "${pkg}-%{version}\n" ${rpmname} | uniq)
+    mkdir -p ${pkg}
+    pushd ${pkg}
+
+    repository=$(zypper --quiet --no-refresh --xmlout search --type srcpackage --match-exact --details ${pkg} | xpath -q -e 'string(//solvable/@repository)')
+    url=$(zypper --quiet --xmlout repos | xpath -q -e "//repo[@name='${repository}']/url/text()")
+
+    [[ ! -e ${nvr}.src.rpm ]] && wget ${url}/src/${nvr}.src.rpm
+    rpm2cpio ${nvr}.src.rpm | cpio -imdV
+    rm -rf ${nv}
+    tar xf ${nv}.tar.*z
+
+    basedir=$(realpath ${nv})
+    popd
+}
+
+function patch_vagrant_opensuse-leap() {
+    set -x
+    mkdir -p patches
+    pushd patches
+
+    setup_rpm_sources_opensuse-leap KRB5_DIR krb5
+    build_krb5 ${KRB5_DIR}
+
+    setup_rpm_sources_opensuse-leap LIBSSH_DIR libssh libssh4
     build_libssh ${LIBSSH_DIR}
 
     popd

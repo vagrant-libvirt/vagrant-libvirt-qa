@@ -77,6 +77,11 @@ BOXES = {
       :box => "archlinux/archlinux",
     },
   },
+  'opensuse-leap' => {
+    :libvirt => {
+      :box => "opensuse/Leap-15.4.x86_64",
+    },
+  },
 }
 
 DEFAULT_PROVISION = [
