@@ -309,8 +309,8 @@ function install_rake_fedora() {
 
 function install_rake_opensuse-leap() {
     sudo zypper install --no-confirm \
-        rubygem-bundler \
-        rubygem-rake
+        ruby2.5-rubygem-bundler \
+        ruby2.5-rubygem-rake
 }
 
 function install_rake_ubuntu() {
