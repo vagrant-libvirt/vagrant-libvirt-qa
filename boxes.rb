@@ -27,9 +27,27 @@ BOXES = {
       ],
     },
   },
+  'ubuntu-22.04' => {
+    :libvirt => {
+      :box => "generic/ubuntu2204",
+      :provision => [
+        {:inline => 'ln -sf ../run/systemd/resolve/resolv.conf /etc/resolv.conf'},
+      ],
+    },
+  },
   'debian-10' => {
     :libvirt => {
       :box => "generic/debian10",
+      :provision => [
+        {:name => 'disable dns-nameservers', :inline => 'sed -i -e "/^dns-nameserver/g" /etc/network/interfaces', :reboot => true},
+        # restarting dnsmasq can require a retry after everything else to come up correctly.
+        {:name => 'install dnsmasq', :inline => 'apt update && apt install -y dnsmasq && systemctl restart dnsmasq', :env => APT_ENV_VARS},
+      ],
+    },
+  },
+  'debian-11' => {
+    :libvirt => {
+      :box => "generic/debian11",
       :provision => [
         {:name => 'disable dns-nameservers', :inline => 'sed -i -e "/^dns-nameserver/g" /etc/network/interfaces', :reboot => true},
         # restarting dnsmasq can require a retry after everything else to come up correctly.
@@ -57,11 +75,6 @@ BOXES = {
       :box => "generic/centos9s",
     },
   },
-  'fedora-33' => {
-    :libvirt => {
-      :box => "generic/fedora33",
-    },
-  },
   'fedora-34' => {
     :libvirt => {
       :box => "generic/fedora34",
@@ -70,6 +83,11 @@ BOXES = {
   'fedora-35' => {
     :libvirt => {
       :box => "generic/fedora35",
+    },
+  },
+  'fedora-36' => {
+    :libvirt => {
+      :box => "generic/fedora36",
     },
   },
   'archlinux' => {

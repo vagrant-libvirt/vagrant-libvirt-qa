@@ -1,15 +1,15 @@
-FROM fedora:33
+FROM debian:11
 
 SHELL ["/bin/bash", "-c"]
 
-RUN dnf update -y && \
-    dnf install -y \
+RUN apt update \
+    && apt install -y \
         kmod \
-        openssh-clients \
         openssh-server \
-        sudo \
+        openssh-client \
         systemd \
-    && dnf clean all \
+        sudo \
+    && rm -rf /var/lib/apt/lists \
     ;
 
 RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ "$i" == "systemd-tmpfiles-setup.service" ] || rm -f $i; done); \
@@ -21,14 +21,13 @@ RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ "$i" == "sys
     rm -f /lib/systemd/system/basic.target.wants/*;\
     rm -f /lib/systemd/system/anaconda.target.wants/*;
 
-RUN systemctl enable sshd \
-    && ln -s /usr/lib/systemd/system/systemd-user-sessions.service /etc/systemd/system/multi-user.target.wants/systemd-user-sessions.service \
+RUN systemctl enable ssh \
+    && ln -s /lib/systemd/system/systemd-user-sessions.service /etc/systemd/system/multi-user.target.wants/systemd-user-sessions.service \
     ;
 
 RUN set -e \
-    && cd /etc/ssh/ \
-    && ssh-keygen -A \
     && sed -i -e 's/Defaults.*requiretty/#&/' /etc/sudoers \
+    && sed -i -ne 'p; s/^deb /deb-src /p' /etc/apt/sources.list \
     ;
 
 RUN set -e \
@@ -48,4 +47,5 @@ RUN set -e \
 
 
 EXPOSE 22
-CMD ["/usr/sbin/init"]
+CMD ["/sbin/init"]
+
