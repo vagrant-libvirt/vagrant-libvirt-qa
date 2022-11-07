@@ -30,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test_name: ${{ fromJSON(needs.generate-matrix.outputs.matrix) }}
+        distro: ${{ fromJSON(needs.generate-matrix.outputs.matrix) }}
 
     steps:
     - uses: actions/checkout@v3
@@ -49,16 +49,16 @@ jobs:
     - uses: actions/cache@v3.0.11
       with:
         path: ~/.vagrant.d/boxes
-        key: ${{ runner.os }}-${{ matrix.test_name }}
+        key: ${{ runner.os }}-${{ matrix.distro }}
         restore-keys: |
           ${{ runner.os }}-
     - name: launch target distro
       run: |
-        vagrant up --no-provision ${{ matrix.test_name }}
+        vagrant up --no-provision ${{ matrix.distro }}
 
     - name: test vagrant-libvirt in target distro
       run: |
-        vagrant provision ${{ matrix.test_name }}
+        vagrant provision ${{ matrix.distro }}
 
   finish:
     needs: verify-install
