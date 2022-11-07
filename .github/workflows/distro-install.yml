@@ -3,7 +3,8 @@ name: Distribution Install
 on:
   pull_request:
   push:
-    - main
+    branches:
+      - main
   schedule:
     - cron: '50 12 * * 1-5'
 
