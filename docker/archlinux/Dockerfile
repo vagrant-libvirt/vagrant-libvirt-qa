@@ -2,7 +2,7 @@ FROM archlinux:base
 
 SHELL ["/bin/bash", "-c"]
 
-RUN pacman -Sy --noconfirm --noprogressbar \
+RUN pacman -Syu --noconfirm --noprogressbar \
     && pacman -S --needed --noprogressbar --noconfirm \
         kmod \
         polkit \
