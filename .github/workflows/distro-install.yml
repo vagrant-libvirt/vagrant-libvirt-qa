@@ -2,6 +2,10 @@ name: Distribution Install
 
 on:
   pull_request:
+  push:
+    - main
+  schedule:
+    - cron: '50 12 * * 1-5'
 
 jobs:
   generate-matrix:
