@@ -10,7 +10,7 @@ on:
 
 jobs:
   generate-matrix:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       matrix: ${{ steps.generate-matrix.outputs.matrix }}
     steps:
@@ -19,10 +19,11 @@ jobs:
       id: generate-matrix
       run: |
         tests="$(ruby boxes.rb | jq -c -r '. | keys')"
-        echo "::set-output name=matrix::${tests}"
+        echo "matrix=${tests}" >> ${GITHUB_OUTPUT}
 
   verify-install:
     needs: generate-matrix
+    timeout-minutes: 15
     runs-on: ubuntu-20.04
     env:
       VAGRANT_DEFAULT_PROVIDER: docker
@@ -62,7 +63,7 @@ jobs:
 
   finish:
     needs: verify-install
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - name: Matrix finished
       run: |
