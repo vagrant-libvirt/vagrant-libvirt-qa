@@ -24,7 +24,7 @@ jobs:
   verify-install:
     needs: generate-matrix
     timeout-minutes: 15
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     env:
       VAGRANT_DEFAULT_PROVIDER: docker
       VAGRANT_LIBVIRT_DRIVER: qemu
