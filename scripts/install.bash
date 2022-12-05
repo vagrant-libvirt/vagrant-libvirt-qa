@@ -191,6 +191,11 @@ function setup_opensuse-leap() {
     # for package details to download the src.rpm's.
     sudo zypper modifyrepo --enable repo-source
     sudo zypper refresh
+    # blocks install of libvirt qemu system package
+    if rpm -q busybox-gzip 2>/dev/null 2>&1
+    then
+        sudo zypper remove --no-confirm busybox-gzip
+    fi
     sudo zypper install --no-confirm \
         byacc \
         cmake \
