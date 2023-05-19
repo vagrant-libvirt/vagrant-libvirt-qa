@@ -28,6 +28,7 @@ jobs:
     env:
       VAGRANT_DEFAULT_PROVIDER: docker
       VAGRANT_LIBVIRT_DRIVER: qemu
+      QA_VAGRANT_VERSION: 2.3.4
     strategy:
       fail-fast: false
       matrix:
@@ -46,7 +47,7 @@ jobs:
         echo "QA_VAGRANT_LIBVIRT_VERSION=git-$(git submodule status -- vagrant-libvirt | cut -d' ' -f2)" >> ${GITHUB_ENV}
     - name: Set up libvirt
       run: |
-        ./scripts/install.bash --vagrant-only
+        ./scripts/install.bash --vagrant-only --vagrant-version 2.3.4
     - uses: actions/cache@v3.2.3
       with:
         path: ~/.vagrant.d/boxes
