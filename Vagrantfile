@@ -42,6 +42,7 @@ Vagrant.configure(2) do |config|
           # next two needed for systemd in container
           "/sys/fs/cgroup:/sys/fs/cgroup:ro",
           "/sys/fs/cgroup/systemd:/sys/fs/cgroup/systemd:rw",
+          "/dev/ptmx:/dev/ptmx:rw",
         ]
         docker.create_args = [
           "--privileged",
